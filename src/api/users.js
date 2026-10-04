@@ -22,3 +22,8 @@ export function getUserById(id) {
 export function makeUserManager(id) {
   return apiClient.put("/User", null, { params: { id } }).then((res) => res.data);
 }
+
+// Only the original administrator may call this; the server enforces it.
+export function makeUserRegular(id) {
+  return apiClient.put("/User/demote", null, { params: { id } }).then((res) => res.data);
+}

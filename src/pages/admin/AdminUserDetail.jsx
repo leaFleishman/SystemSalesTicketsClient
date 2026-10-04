@@ -5,15 +5,22 @@ import { extractErrorMessage } from "../../api/client";
 import Spinner from "../../components/Spinner";
 import EmptyState from "../../components/EmptyState";
 import { useToast } from "../../context/ToastContext";
+import { useAuth } from "../../context/AuthContext";
 import { roleLabel } from "../../utils/format";
+
+// Must match "OriginalAdmin:Email" on the server (the server is what actually enforces it).
+const ORIGINAL_ADMIN_EMAIL = (import.meta.env.VITE_ORIGINAL_ADMIN_EMAIL || "admin@example.com").toLowerCase();
 
 export default function AdminUserDetail() {
   const { id } = useParams();
   const toast = useToast();
+  const { session, userId } = useAuth();
+  const isOriginalAdmin = (session?.name || "").trim().toLowerCase() === ORIGINAL_ADMIN_EMAIL;
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [promoting, setPromoting] = useState(false);
+  const [demoting, setDemoting] = useState(false);
 
   const load = () => {
     setLoading(true);
@@ -37,6 +44,20 @@ export default function AdminUserDetail() {
       toast.error(extractErrorMessage(err, "קידום המשתמש נכשל."));
     } finally {
       setPromoting(false);
+    }
+  };
+
+  const handleDemote = async () => {
+    if (!window.confirm("להחזיר את המנהל למשתמש רגיל?")) return;
+    setDemoting(true);
+    try {
+      await usersApi.makeUserRegular(id);
+      toast.success("המנהל הוחזר למשתמש רגיל.");
+      setUser((u) => ({ ...u, role: "User" }));
+    } catch (err) {
+      toast.error(extractErrorMessage(err, "הורדת התפקיד נכשלה."));
+    } finally {
+      setDemoting(false);
     }
   };
 
@@ -71,10 +92,15 @@ export default function AdminUserDetail() {
           </div>
         )}
 
-        <div className="mt-24">
+        <div className="mt-24" style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
           <button className="btn btn-primary" onClick={handlePromote} disabled={promoting}>
             {promoting ? "מקדם..." : "קידום לתפקיד מנהל"}
           </button>
+          {isOriginalAdmin && user.role === "Manager" && Number(id) !== userId && (
+            <button className="btn btn-danger" onClick={handleDemote} disabled={demoting}>
+              {demoting ? "מבצע..." : "החזרה למשתמש רגיל"}
+            </button>
+          )}
         </div>
       </div>
     </div>

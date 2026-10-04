@@ -984,3 +984,55 @@ tbody tr:hover {
     gap: 2px;
   }
 }
+
+/* ============================================================
+   Landing page
+   ============================================================ */
+.landing {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 20px;
+  background: radial-gradient(ellipse at top, var(--primary-soft), transparent 65%);
+}
+
+.landing-inner {
+  max-width: 560px;
+  text-align: center;
+}
+
+.landing-mark {
+  display: block;
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 24px;
+  border-radius: var(--radius-md);
+  background: var(--primary);
+  box-shadow: var(--shadow-md);
+}
+
+.landing h1 {
+  font-size: 2.4rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin-bottom: 14px;
+}
+
+.landing p {
+  color: var(--ink-soft);
+  font-size: 1.05rem;
+  margin-bottom: 32px;
+}
+
+.landing-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.landing-actions .btn {
+  min-width: 140px;
+  padding: 12px 24px;
+}

@@ -5,7 +5,7 @@ import { ProtectedRoute, RoleRoute } from "./components/RouteGuards";
 
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import Events from "./pages/Events";
+import Home from "./pages/Home";
 import EventDetail from "./pages/EventDetail";
 import OrderConfirmation from "./pages/OrderConfirmation";
 import NotFound from "./pages/NotFound";
@@ -29,9 +29,9 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/unauthorized" element={<Unauthorized />} />
+        <Route path="/" element={<Home />} />
 
         <Route element={<ProtectedRoute />}>
-          <Route path="/" element={<Events />} />
           <Route path="/events/:name" element={<EventDetail />} />
           <Route path="/order-confirmation" element={<OrderConfirmation />} />
 
