@@ -20,6 +20,7 @@ export default function AdminEventSeats() {
   const [error, setError] = useState("");
   const [linkingId, setLinkingId] = useState(null);
   const [linkingAll, setLinkingAll] = useState(false);
+  const [removingId, setRemovingId] = useState(null);
 
   // Load the event list once for the dropdown.
   useEffect(() => {
@@ -66,6 +67,20 @@ export default function AdminEventSeats() {
     }
   };
 
+  const handleRemove = async (es) => {
+    if (!window.confirm(`להסיר את המושב ${es.row}-${es.line} מהאירוע?`)) return;
+    setRemovingId(es.seatId);
+    try {
+      await eventSeatsApi.removeEventSeat({ eventId: Number(selectedEventId), seatId: es.seatId });
+      toast.success(`המושב ${es.row}-${es.line} הוסר מהאירוע.`);
+      loadSeats();
+    } catch (err) {
+      toast.error(extractErrorMessage(err, "הסרת המושב מהאירוע נכשלה."));
+    } finally {
+      setRemovingId(null);
+    }
+  };
+
   const handleLinkAll = async () => {
     setLinkingAll(true);
     try {
@@ -97,8 +112,8 @@ export default function AdminEventSeats() {
         </div>
         <div className="panel-body">
           <p className="field-hint" style={{ marginBottom: 16 }}>
-            כאן מוסיפים מושבים קיימים לאירוע. מושב שנוצר אחרי שהאירוע כבר קיים אינו משויך אליו אוטומטית —
-            יש לשייך אותו כאן כדי שיהיה ניתן להזמין אותו.
+            כאן מוסיפים מושבים לאירוע או מסירים אותם ממנו. מושב שהוסר אינו ניתן להזמנה באירוע זה,
+            ולא ניתן להסיר מושב שכבר הוזמן.
           </p>
           <div className="field" style={{ maxWidth: 320 }}>
             <label htmlFor="event-select">אירוע</label>
@@ -135,6 +150,7 @@ export default function AdminEventSeats() {
                         <th>שורה</th>
                         <th>טור</th>
                         <th>סטטוס</th>
+                        <th></th>
                       </tr>
                     </thead>
                     <tbody>
@@ -147,6 +163,16 @@ export default function AdminEventSeats() {
                             <span className={`badge ${es.isAvailable ? "badge-success" : "badge-neutral"}`}>
                               {es.isAvailable ? "פנוי" : "תפוס"}
                             </span>
+                          </td>
+                          <td>
+                            <button
+                              className="btn btn-secondary btn-sm"
+                              onClick={() => handleRemove(es)}
+                              disabled={removingId === es.seatId || !es.isAvailable}
+                              title={es.isAvailable ? "" : "לא ניתן להסיר מושב תפוס"}
+                            >
+                              {removingId === es.seatId ? "מסיר..." : "הסר מהאירוע"}
+                            </button>
                           </td>
                         </tr>
                       ))}

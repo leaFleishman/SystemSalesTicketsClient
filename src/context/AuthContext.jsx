@@ -7,7 +7,7 @@ const AuthContext = createContext(null);
 
 const TOKEN_KEY = "sst_token";
 const NAME_KEY = "sst_name";
-const WARNING_WINDOW_MS = 45 * 1000; // warn 45s before the (short, 6-minute) token expires
+const WARNING_WINDOW_MS = 5 * 60 * 1000; // warn 5 minutes before the token expires
 
 function readSession() {
   const token = localStorage.getItem(TOKEN_KEY);

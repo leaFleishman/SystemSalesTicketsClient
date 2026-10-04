@@ -13,6 +13,12 @@ export function addEventSeat({ eventId, seatId }) {
   return apiClient.post("/EventSeat", { eventId, seatId }).then((res) => res.data);
 }
 
+// Removes a seat's association with an event. Manager-only. The server
+// answers 409 if the seat already has an order for this event.
+export function removeEventSeat({ eventId, seatId }) {
+  return apiClient.delete(`/EventSeat/event/${eventId}/seat/${seatId}`);
+}
+
 // Links every seat not yet linked to this event, in one request. Manager-only.
 export function linkAllSeatsToEvent(eventId) {
   return apiClient.post(`/EventSeat/event/${eventId}/link-all`).then((res) => res.data);
