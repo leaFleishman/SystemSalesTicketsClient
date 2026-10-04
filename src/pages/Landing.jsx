@@ -86,7 +86,7 @@ export default function Landing() {
                 <div className="lp-ticket-meta">
                   <div>
                     <small>תאריך</small>
-                    <strong>שישי · 21:00</strong>
+                    <strong>חמישי · 21:00</strong>
                   </div>
                   <div>
                     <small>אולם</small>
