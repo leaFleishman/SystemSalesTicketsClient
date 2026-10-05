@@ -84,6 +84,21 @@ they're easy to find if the backend gets fixed later.
   warning modal ~45 seconds before expiry and logs out automatically when
   the token dies, since the only recovery is a fresh login.
 
+## Editing and cancelling events (Manager)
+
+In **Admin → Events** each row has two actions, backed by `PUT /api/Event/{id}`
+and `PUT /api/Event/{id}/cancel`:
+
+- **עריכה** — edit name / date / price / number of seats. The server's
+  rejections (cancelled or past event, seats below the tickets already
+  ordered, duplicate name or date) are shown inside the dialog.
+- **ביטול אירוע** — confirmation dialog with an optional reason (max 500
+  chars). The result toast reports how many ticket holders were emailed.
+
+Cancelled events show a "בוטל" badge in the admin table and on the public
+list, and the event page shows the reason and blocks seat booking.
+Cancelled or past events cannot be edited or cancelled again.
+
 ## Project structure
 
 ```

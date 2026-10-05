@@ -45,3 +45,20 @@ export function roleLabel(role) {
       return role || "—";
   }
 }
+
+// Converts an ISO date from the API into the "YYYY-MM-DDTHH:mm" value a
+// <input type="datetime-local"> expects, in the viewer's local time.
+export function toDateTimeLocalValue(value) {
+  if (!value) return "";
+  const str = String(value);
+  // The API sends UTC; treat a zone-less string as UTC too.
+  const d = new Date(/[zZ]|[+-]\d{2}:?\d{2}$/.test(str) ? str : `${str}Z`);
+  if (Number.isNaN(d.getTime())) return "";
+  const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 16);
+}
+
+export function isPastEvent(value) {
+  const d = new Date(value);
+  return !Number.isNaN(d.getTime()) && d.getTime() <= Date.now();
+}

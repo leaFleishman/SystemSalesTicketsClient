@@ -63,10 +63,11 @@ export default function Events() {
               <Link
                 to={`/events/${encodeURIComponent(ev.name)}`}
                 key={ev.id}
-                className="ticket-card"
+                className={`ticket-card${ev.isCancelled ? " ticket-card--cancelled" : ""}`}
               >
                 <div className="ticket-main">
                   <h3>{ev.name}</h3>
+                  {ev.isCancelled && <span className="badge badge-danger">האירוע בוטל</span>}
                   <div className="ticket-meta">
                     <span>{formatDate(ev.date)}</span>
                     <span>{ev.numberOfSeats} מקומות</span>

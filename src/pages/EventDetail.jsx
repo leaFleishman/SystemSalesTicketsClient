@@ -55,12 +55,16 @@ export default function EventDetail() {
   useEffect(load, [name]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSelectSeat = (seat) => {
-    if (!seat.isAvailable) return;
+    if (!seat.isAvailable || event?.isCancelled) return;
     setSelectedSeat(seat);
     setBookingError("");
   };
 
   const handleBook = async () => {
+    if (event?.isCancelled) {
+      setBookingError("האירוע בוטל ולא ניתן להזמין אליו כרטיסים.");
+      return;
+    }
     if (!selectedSeat) {
       setBookingError("בחרו מושב תחילה.");
       return;
@@ -112,6 +116,14 @@ export default function EventDetail() {
         </div>
       </div>
 
+      {event.isCancelled && (
+        <div className="alert alert-danger">
+          <strong>האירוע בוטל.</strong>
+          {event.cancellationReason && <> {event.cancellationReason}</>}
+          <div>לא ניתן להזמין כרטיסים לאירוע זה.</div>
+        </div>
+      )}
+
       <div className="panel">
         <div className="panel-header">
           <h2>בחירת מושב</h2>
@@ -132,7 +144,7 @@ export default function EventDetail() {
                     className={`seat-tile${selectedSeat?.seatId === seat.seatId ? " selected" : ""}`}
                     onClick={() => handleSelectSeat(seat)}
                     type="button"
-                    disabled={!seat.isAvailable}
+                    disabled={!seat.isAvailable || event.isCancelled}
                   >
                     <div className="seat-tile-label">
                       {seat.row}-{seat.line}
@@ -142,7 +154,7 @@ export default function EventDetail() {
                 ))}
               </div>
 
-              {selectedSeat && (
+              {selectedSeat && !event.isCancelled && (
                 <div className="stack-16 mt-24">
                   {bookingError && <div className="alert alert-danger">{bookingError}</div>}
 

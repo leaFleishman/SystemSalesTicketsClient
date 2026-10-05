@@ -1449,3 +1449,44 @@ tbody tr:hover {
     right: 4px;
   }
 }
+
+/* ============================================================
+   Event edit / cancel
+   ============================================================ */
+.modal-card--wide {
+  max-width: 520px;
+  text-align: start;
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+}
+
+.field textarea {
+  width: 100%;
+  padding: 11px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  font: inherit;
+  resize: vertical;
+}
+
+.field textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-soft);
+  background: var(--surface);
+}
+
+.row-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ticket-card--cancelled {
+  opacity: 0.65;
+}
+
+.ticket-card--cancelled h3 {
+  text-decoration: line-through;
+}

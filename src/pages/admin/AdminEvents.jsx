@@ -4,7 +4,9 @@ import { extractErrorMessage } from "../../api/client";
 import Spinner from "../../components/Spinner";
 import EmptyState from "../../components/EmptyState";
 import Pagination from "../../components/Pagination";
-import { formatDate, formatPrice } from "../../utils/format";
+import EventFormModal from "../../components/EventFormModal";
+import CancelEventModal from "../../components/CancelEventModal";
+import { formatDateTime, formatPrice, isPastEvent } from "../../utils/format";
 import { useToast } from "../../context/ToastContext";
 
 const emptyForm = { name: "", date: "", price: "", numberOfSeats: "" };
@@ -18,6 +20,8 @@ export default function AdminEvents() {
 
   const [form, setForm] = useState(emptyForm);
   const [formError, setFormError] = useState("");
+  const [editing, setEditing] = useState(null);
+  const [cancelling, setCancelling] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
   const load = () => {
@@ -54,6 +58,26 @@ export default function AdminEvents() {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleSaved = () => {
+    setEditing(null);
+    toast.success("האירוע עודכן בהצלחה.");
+    load();
+  };
+
+  const handleCancelled = (result) => {
+    setCancelling(null);
+    const orders = result?.affectedOrders ?? 0;
+    const sent = result?.notificationsSent ?? 0;
+    if (orders === 0) {
+      toast.success("האירוע בוטל. לא היו הזמנות לאירוע.");
+    } else if (sent < orders) {
+      toast.info(`האירוע בוטל. נשלחו ${sent} מתוך ${orders} הודעות ללקוחות — ייתכן שחלק מההודעות לא נשלחו.`);
+    } else {
+      toast.success(`האירוע בוטל ונשלחו הודעות ל-${sent} לקוחות.`);
+    }
+    load();
   };
 
   return (
@@ -111,17 +135,58 @@ export default function AdminEvents() {
                     <th>תאריך</th>
                     <th>מחיר</th>
                     <th>מקומות</th>
+                    <th>סטטוס</th>
+                    <th>פעולות</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {page.data.map((ev) => (
-                    <tr key={ev.id}>
-                      <td>{ev.name}</td>
-                      <td>{formatDate(ev.date)}</td>
-                      <td>{formatPrice(ev.price)}</td>
-                      <td>{ev.numberOfSeats}</td>
-                    </tr>
-                  ))}
+                  {page.data.map((ev) => {
+                    const past = isPastEvent(ev.date);
+                    const locked = ev.isCancelled || past;
+                    const lockedHint = ev.isCancelled ? "האירוע בוטל" : "האירוע כבר התקיים";
+                    return (
+                      <tr key={ev.id}>
+                        <td>{ev.name}</td>
+                        <td>{formatDateTime(ev.date)}</td>
+                        <td>{formatPrice(ev.price)}</td>
+                        <td>{ev.numberOfSeats}</td>
+                        <td>
+                          {ev.isCancelled ? (
+                            <span className="badge badge-danger" title={ev.cancellationReason || undefined}>
+                              בוטל
+                            </span>
+                          ) : past ? (
+                            <span className="badge badge-neutral">התקיים</span>
+                          ) : (
+                            <span className="badge badge-success">פעיל</span>
+                          )}
+                          {ev.isCancelled && ev.cancellationReason && (
+                            <div className="field-hint">{ev.cancellationReason}</div>
+                          )}
+                        </td>
+                        <td>
+                          <div className="row-actions">
+                            <button
+                              className="btn btn-secondary btn-sm"
+                              onClick={() => setEditing(ev)}
+                              disabled={locked}
+                              title={locked ? lockedHint : undefined}
+                            >
+                              עריכה
+                            </button>
+                            <button
+                              className="btn btn-danger btn-sm"
+                              onClick={() => setCancelling(ev)}
+                              disabled={locked}
+                              title={locked ? lockedHint : undefined}
+                            >
+                              ביטול אירוע
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -135,6 +200,11 @@ export default function AdminEvents() {
           />
         </div>
       </div>
+
+      {editing && <EventFormModal event={editing} onClose={() => setEditing(null)} onSaved={handleSaved} />}
+      {cancelling && (
+        <CancelEventModal event={cancelling} onClose={() => setCancelling(null)} onCancelled={handleCancelled} />
+      )}
     </div>
   );
 }
