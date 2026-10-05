@@ -21,6 +21,7 @@ export default function AdminUserDetail() {
   const [error, setError] = useState("");
   const [promoting, setPromoting] = useState(false);
   const [demoting, setDemoting] = useState(false);
+  const [togglingBlock, setTogglingBlock] = useState(false);
 
   const load = () => {
     setLoading(true);
@@ -61,6 +62,22 @@ export default function AdminUserDetail() {
     }
   };
 
+  const handleToggleBlock = async () => {
+    const blocking = !user.isBlocked;
+    const question = blocking ? "לחסום את המשתמש? הוא לא יוכל להתחבר." : "להפעיל מחדש את המשתמש?";
+    if (!window.confirm(question)) return;
+    setTogglingBlock(true);
+    try {
+      const updated = blocking ? await usersApi.blockUser(id) : await usersApi.unblockUser(id);
+      toast.success(blocking ? "המשתמש נחסם." : "המשתמש הופעל מחדש.");
+      setUser((u) => ({ ...u, isBlocked: updated?.isBlocked ?? blocking }));
+    } catch (err) {
+      toast.error(extractErrorMessage(err, blocking ? "חסימת המשתמש נכשלה." : "הפעלת המשתמש נכשלה."));
+    } finally {
+      setTogglingBlock(false);
+    }
+  };
+
   if (loading) return <Spinner />;
   if (error || !user) return <EmptyState title="המשתמש לא נמצא" description={error} />;
 
@@ -92,6 +109,13 @@ export default function AdminUserDetail() {
           </div>
         )}
 
+        <div className="confirm-row">
+          <span>סטטוס</span>
+          <span className={`badge ${user.isBlocked ? "badge-danger" : "badge-success"}`}>
+            {user.isBlocked ? "חסום" : "פעיל"}
+          </span>
+        </div>
+
         <div className="mt-24" style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
           <button className="btn btn-primary" onClick={handlePromote} disabled={promoting}>
             {promoting ? "מקדם..." : "קידום לתפקיד מנהל"}
@@ -99,6 +123,15 @@ export default function AdminUserDetail() {
           {isOriginalAdmin && user.role === "Manager" && Number(id) !== userId && (
             <button className="btn btn-danger" onClick={handleDemote} disabled={demoting}>
               {demoting ? "מבצע..." : "החזרה למשתמש רגיל"}
+            </button>
+          )}
+          {Number(id) !== userId && (user.role !== "Manager" || isOriginalAdmin) && (
+            <button
+              className={`btn ${user.isBlocked ? "btn-secondary" : "btn-danger"}`}
+              onClick={handleToggleBlock}
+              disabled={togglingBlock}
+            >
+              {togglingBlock ? "מבצע..." : user.isBlocked ? "הפעלה מחדש" : "חסימת משתמש"}
             </button>
           )}
         </div>

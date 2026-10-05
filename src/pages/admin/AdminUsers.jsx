@@ -28,9 +28,6 @@ export default function AdminUsers() {
         <h2>כל המשתמשים</h2>
       </div>
       <div className="panel-body">
-        <div className="alert alert-info">
-          רשימת המשתמשים מה-API אינה כוללת מזהה מפורש, לכן העמודה "#" משוערת לפי סדר הרשימה.
-        </div>
         {error && <div className="alert alert-danger">{error}</div>}
         {loading ? (
           <Spinner />
@@ -45,6 +42,7 @@ export default function AdminUsers() {
                   <th>שם</th>
                   <th>טלפון</th>
                   <th>אימייל</th>
+                  <th>סטטוס</th>
                   <th></th>
                 </tr>
               </thead>
@@ -55,6 +53,11 @@ export default function AdminUsers() {
                     <td>{user.userName}</td>
                     <td>{user.phone}</td>
                     <td>{user.email}</td>
+                    <td>
+                      <span className={`badge ${user.isBlocked ? "badge-danger" : "badge-success"}`}>
+                        {user.isBlocked ? "חסום" : "פעיל"}
+                      </span>
+                    </td>
                     <td>
                       <Link className="btn btn-secondary btn-sm" to={`/admin/users/${user.inferredId}`}>
                         פרטים
