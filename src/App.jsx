@@ -8,6 +8,7 @@ import Register from "./pages/Register";
 import Home from "./pages/Home";
 import EventDetail from "./pages/EventDetail";
 import OrderConfirmation from "./pages/OrderConfirmation";
+import MyOrders from "./pages/MyOrders";
 import NotFound from "./pages/NotFound";
 import Unauthorized from "./pages/Unauthorized";
 
@@ -34,6 +35,7 @@ export default function App() {
         <Route element={<ProtectedRoute />}>
           <Route path="/events/:name" element={<EventDetail />} />
           <Route path="/order-confirmation" element={<OrderConfirmation />} />
+          <Route path="/my-orders" element={<MyOrders />} />
 
           <Route element={<RoleRoute roles={["Manager"]} />}>
             <Route path="/admin" element={<AdminLayout />}>

@@ -24,6 +24,9 @@ export default function Navbar() {
             <NavLink to="/" end className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}>
               אירועים
             </NavLink>
+            <NavLink to="/my-orders" className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}>
+              ההזמנות שלי
+            </NavLink>
             {isManager && (
               <NavLink to="/admin/events" className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}>
                 ניהול
