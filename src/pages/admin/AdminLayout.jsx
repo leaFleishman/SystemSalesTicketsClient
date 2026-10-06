@@ -1,8 +1,8 @@
 import { NavLink, Outlet } from "react-router-dom";
 
 const tabs = [
-  { to: "/admin", label: "Dashboard", end: true },
-  { to: "/admin/events", label: "אירועים" },
+    { to: "/admin", label: "לוח בקרה", end: true },
+    { to: "/admin/events", label: "אירועים" },
   { to: "/admin/seats", label: "מושבים" },
   { to: "/admin/event-seats", label: "שיוך מושבים" },
   { to: "/admin/orders", label: "הזמנות" },
