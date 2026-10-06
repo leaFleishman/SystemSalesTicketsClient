@@ -1,4 +1,3 @@
-```jsx
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import * as eventsApi from "../api/events";
@@ -166,16 +165,13 @@ export default function EventDetail() {
         0
     );
 
-    // סינון לפי שורה - רק מושבים פנויים
+    // סינון מושבים לפי שורה - מציג רק מושבים פנויים
     const filteredSeats = seats.filter((seat) => {
         if (!seat.isAvailable) return false;
 
         if (!rowFilter.trim()) return true;
 
-        return (
-            String(seat.row).trim() ===
-            rowFilter.trim()
-        );
+        return String(seat.row).trim() === rowFilter.trim();
     });
 
     return (
@@ -264,20 +260,16 @@ export default function EventDetail() {
                                     {filteredSeats.map((seat) => (
                                         <button
                                             key={seat.seatId}
-                                            className={`seat - tile${
-    selectedSeat?.seatId ===
-        seat.seatId
-        ? " selected"
-        : ""
-} `}
+                                            className={`seat-tile${selectedSeat?.seatId ===
+                                                    seat.seatId
+                                                    ? " selected"
+                                                    : ""
+                                                }`}
                                             onClick={() =>
                                                 handleSelectSeat(seat)
                                             }
                                             type="button"
-                                            disabled={
-                                                !seat.isAvailable ||
-                                                event.isCancelled
-                                            }
+                                            disabled={event.isCancelled}
                                         >
                                             <div className="seat-tile-label">
                                                 {seat.row}-{seat.line}
@@ -307,7 +299,7 @@ export default function EventDetail() {
                                         >
                                             {booking
                                                 ? "מבצע הזמנה..."
-                                                : `הזמנת מושב ${ selectedSeat.row } -${ selectedSeat.line } `}
+                                                : `הזמנת מושב ${selectedSeat.row}-${selectedSeat.line}`}
                                         </button>
                                     </div>
                                 </div>
@@ -319,4 +311,3 @@ export default function EventDetail() {
         </div>
     );
 }
-```
