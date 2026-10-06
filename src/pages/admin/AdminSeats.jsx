@@ -160,33 +160,33 @@ export default function AdminSeats() {
                     <h2>כל המושבים</h2>
                 </div>
 
-                <div className="panel-body">
-                    <div className="field">
-                        <label htmlFor="seat-row-filter">
-                            חיפוש לפי שורה
-                        </label>
+                <di<div className="field" style={{ maxWidth: "320px" }}>
+                    <label htmlFor="seat-row-filter">
+                        חיפוש לפי שורה
+                    </label>
 
-                        <div className="field-row">
-                            <input
-                                id="seat-row-filter"
-                                type="number"
-                                min={1}
-                                value={rowFilter}
-                                onChange={handleRowFilterChange}
-                                placeholder="מספר שורה"
-                            />
+                    <div className="field-row">
+                        <input
+                            id="seat-row-filter"
+                            type="number"
+                            min={1}
+                            value={rowFilter}
+                            onChange={handleRowFilterChange}
+                            placeholder="מספר שורה"
+                            style={{ maxWidth: "180px" }}
+                        />
 
-                            {rowFilter !== "" && (
-                                <button
-                                    className="btn btn-secondary"
-                                    type="button"
-                                    onClick={clearRowFilter}
-                                >
-                                    ניקוי
-                                </button>
-                            )}
-                        </div>
+                        {rowFilter !== "" && (
+                            <button
+                                className="btn btn-secondary"
+                                type="button"
+                                onClick={clearRowFilter}
+                            >
+                                ניקוי
+                            </button>
+                        )}
                     </div>
+                </div>
 
                     {error && (
                         <div className="alert alert-danger">{error}</div>
