@@ -132,6 +132,12 @@ export default function EventDetail() {
         }
     };
 
+    const clearRowFilter = () => {
+        setRowFilter("");
+        setSelectedSeat(null);
+        setBookingError("");
+    };
+
     if (loading) {
         return (
             <div className="page">
@@ -151,21 +157,17 @@ export default function EventDetail() {
         );
     }
 
-    // מספר המקומות הכולל באירוע
     const totalSeats = event.numberOfSeats ?? seats.length;
 
-    // מספר הכרטיסים שכבר נקנו
     const soldTickets = seats.filter(
         (seat) => !seat.isAvailable
     ).length;
 
-    // מספר המקומות הפנויים
     const availableTickets = Math.max(
         totalSeats - soldTickets,
         0
     );
 
-    // סינון מושבים לפי שורה - מציג רק מושבים פנויים
     const filteredSeats = seats.filter((seat) => {
         if (!seat.isAvailable) return false;
 
@@ -230,41 +232,90 @@ export default function EventDetail() {
                         />
                     ) : (
                         <>
-                            <div className="stack-16 mb-24">
-                                <label htmlFor="row-filter">
-                                    <strong>סינון לפי שורה</strong>
-                                </label>
-
-                                <input
-                                    id="row-filter"
-                                    type="text"
-                                    inputMode="numeric"
-                                    value={rowFilter}
-                                    onChange={(e) => {
-                                        setRowFilter(e.target.value);
-                                        setSelectedSeat(null);
-                                        setBookingError("");
+                            {/* סינון לפי שורה */}
+                            <div
+                                style={{
+                                    display: "flex",
+                                    alignItems: "flex-end",
+                                    gap: "12px",
+                                    marginBottom: "24px",
+                                    flexWrap: "wrap",
+                                }}
+                            >
+                                <div
+                                    style={{
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        gap: "6px",
+                                        width: "180px",
                                     }}
-                                    placeholder="הכניסו מספר שורה, למשל 5"
-                                    className="input"
-                                />
+                                >
+                                    <label
+                                        htmlFor="row-filter"
+                                        style={{
+                                            fontWeight: 600,
+                                        }}
+                                    >
+                                        סינון לפי שורה
+                                    </label>
+
+                                    <input
+                                        id="row-filter"
+                                        type="text"
+                                        inputMode="numeric"
+                                        value={rowFilter}
+                                        onChange={(e) => {
+                                            setRowFilter(e.target.value);
+                                            setSelectedSeat(null);
+                                            setBookingError("");
+                                        }}
+                                        placeholder="מספר שורה"
+                                        className="input"
+                                    />
+                                </div>
+
+                                {rowFilter && (
+                                    <button
+                                        type="button"
+                                        className="btn btn-secondary"
+                                        onClick={clearRowFilter}
+                                    >
+                                        נקה סינון
+                                    </button>
+                                )}
                             </div>
+
+                            {rowFilter && (
+                                <div
+                                    style={{
+                                        marginBottom: "16px",
+                                        fontSize: "14px",
+                                        opacity: 0.75,
+                                    }}
+                                >
+                                    מציג מושבים פנויים בשורה{" "}
+                                    <strong>{rowFilter}</strong>
+                                    {" · "}
+                                    {filteredSeats.length} מושבים נמצאו
+                                </div>
+                            )}
 
                             {filteredSeats.length === 0 ? (
                                 <EmptyState
                                     title="אין מושבים פנויים בשורה הזו"
-                                    description="נסו מספר שורה אחר או השאירו את השדה ריק."
+                                    description="נסו מספר שורה אחר או נקו את הסינון כדי לראות את כל המושבים."
                                 />
                             ) : (
                                 <div className="seat-grid">
                                     {filteredSeats.map((seat) => (
                                         <button
                                             key={seat.seatId}
-                                            className={`seat-tile${selectedSeat?.seatId ===
-                                                    seat.seatId
+                                            className={`seat-tile${
+                                                selectedSeat?.seatId ===
+                                                seat.seatId
                                                     ? " selected"
                                                     : ""
-                                                }`}
+                                            }`}
                                             onClick={() =>
                                                 handleSelectSeat(seat)
                                             }
