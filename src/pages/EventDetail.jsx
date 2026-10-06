@@ -252,43 +252,40 @@ export default function EventDetail() {
                                 >
                                     שורה:
                                 </label>
-
-                                <input
-                                    id="row-filter"
-                                    type="text"
-                                    inputMode="numeric"
-                                    value={rowFilter}
-                                    onChange={(e) => {
-                                        setRowFilter(e.target.value);
-                                        setSelectedSeat(null);
-                                        setBookingError("");
-                                    }}
-                                    placeholder="כל השורות"
-                                    style={{
-                                        width: "110px",
-                                        height: "36px",
-                                        padding: "0 12px",
-                                        border: "1px solid #e5e7eb",
-                                        borderRadius: "8px",
-                                        background: "#fafafa",
-                                        color: "#374151",
-                                        fontSize: "14px",
-                                        outline: "none",
-                                        transition:
-                                            "border-color 0.2s, box-shadow 0.2s",
-                                    }}
-                                    onFocus={(e) => {
-                                        e.target.style.borderColor =
-                                            "#cbd5e1";
-                                        e.target.style.boxShadow =
-                                            "0 0 0 3px rgba(148, 163, 184, 0.12)";
-                                    }}
-                                    onBlur={(e) => {
-                                        e.target.style.borderColor =
-                                            "#e5e7eb";
-                                        e.target.style.boxShadow = "none";
-                                    }}
-                                />
+                                    <input
+                                        id="row-filter"
+                                        type="text"
+                                        inputMode="numeric"
+                                        value={rowFilter}
+                                        onChange={(e) => {
+                                            setRowFilter(e.target.value);
+                                            setSelectedSeat(null);
+                                            setBookingError("");
+                                        }}
+                                        placeholder="כל השורות"
+                                        style={{
+                                            width: "110px",
+                                            height: "36px",
+                                            padding: "0 12px",
+                                            border: "1px solid #d9e5dc",
+                                            borderRadius: "8px",
+                                            background: "#fcfdfc",
+                                            color: "#374151",
+                                            fontSize: "14px",
+                                            outline: "none",
+                                            transition:
+                                                "border-color 0.2s ease, box-shadow 0.2s ease",
+                                        }}
+                                        onFocus={(e) => {
+                                            e.target.style.borderColor = "#86b894";
+                                            e.target.style.boxShadow =
+                                                "0 0 0 3px rgba(76, 175, 80, 0.12)";
+                                        }}
+                                        onBlur={(e) => {
+                                            e.target.style.borderColor = "#d9e5dc";
+                                            e.target.style.boxShadow = "none";
+                                        }}
+                                    />
 
                                 {rowFilter && (
                                     <button
