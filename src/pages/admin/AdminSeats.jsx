@@ -160,7 +160,7 @@ export default function AdminSeats() {
                     <h2>כל המושבים</h2>
                 </div>
 
-                <di<div className="field" style={{ maxWidth: "320px" }}>
+                <div className="field" style={{ maxWidth: "320px" }}>
                     <label htmlFor="seat-row-filter">
                         חיפוש לפי שורה
                     </label>
