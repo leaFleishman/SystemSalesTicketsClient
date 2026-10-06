@@ -70,7 +70,7 @@ export default function Landing() {
                   >
                     <path
                       pathLength="1"
-                      d="M198 6 C 150 1.5, 90 10.5, 3 5"
+                      d="M196 6 C 150 1.5, 90 10.5, 5 5"
                     />
                   </svg>
                 </i>

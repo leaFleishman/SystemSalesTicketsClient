@@ -1062,9 +1062,17 @@ tbody tr:hover {
   width: 100%;
   height: 12px;
   overflow: visible;
-  /* fully hidden from the very first paint; revealed right-to-left */
-  clip-path: inset(-8px 0 -8px 100%);
-  animation: lp-draw-reveal 0.9s 0.5s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+  /* A soft-edged mask sweeps right-to-left. It starts fully transparent, so
+     nothing of the line is visible before the animation begins. */
+  -webkit-mask-image: linear-gradient(to left, #000 46.5%, transparent 53.5%);
+  mask-image: linear-gradient(to left, #000 46.5%, transparent 53.5%);
+  -webkit-mask-size: 215% 100%;
+  mask-size: 215% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: 0% 0;
+  mask-position: 0% 0;
+  animation: lp-draw-reveal 2.4s 0.5s cubic-bezier(0.37, 0, 0.63, 1) forwards;
 }
 
 .lp-draw-line path {
@@ -1076,12 +1084,16 @@ tbody tr:hover {
 }
 
 @keyframes lp-draw-reveal {
-  from { clip-path: inset(-8px 0 -8px 100%); }
-  to   { clip-path: inset(-8px -8px -8px -8px); }
+  from { -webkit-mask-position: 0% 0;   mask-position: 0% 0; }
+  to   { -webkit-mask-position: 100% 0; mask-position: 100% 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .lp-draw-line { animation: none; clip-path: none; }
+  .lp-draw-line {
+    animation: none;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
 }
 
 .lp-sub {
