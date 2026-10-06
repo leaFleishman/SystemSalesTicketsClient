@@ -1,22 +1,44 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+
 import * as authApi from "../api/auth";
 import { registerUnauthorizedHandler } from "../api/client";
-import { getExpiryMs, getRoleFromToken, getUserIdFromToken, isTokenExpired } from "../utils/jwt";
+
+import {
+  getExpiryMs,
+  getNameFromToken,
+  getRoleFromToken,
+  getUserIdFromToken,
+  isTokenExpired,
+} from "../utils/jwt";
 
 const AuthContext = createContext(null);
 
 const TOKEN_KEY = "sst_token";
 const NAME_KEY = "sst_name";
-const WARNING_WINDOW_MS = 5 * 60 * 1000; // warn 5 minutes before the token expires
+const WARNING_WINDOW_MS = 5 * 60 * 1000;
 
 function readSession() {
   const token = localStorage.getItem(TOKEN_KEY);
-  if (!token || isTokenExpired(token)) return null;
+
+  if (!token || isTokenExpired(token)) {
+    return null;
+  }
+
+  const name = getNameFromToken(token);
+
   return {
     token,
     role: getRoleFromToken(token),
     userId: getUserIdFromToken(token),
-    name: localStorage.getItem(NAME_KEY) || "",
+    name,
     expiresAt: getExpiryMs(token),
   };
 }
@@ -34,32 +56,50 @@ export function AuthProvider({ children }) {
   const logout = useCallback((message) => {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(NAME_KEY);
+
     clearTimers();
     setExpiringSoon(false);
     setSession(null);
+
     if (message) {
       sessionStorage.setItem("sst_logout_reason", message);
     }
   }, []);
 
   useEffect(() => {
-    registerUnauthorizedHandler(() => logout("פג תוקף ההתחברות, נא להתחבר מחדש."));
+    registerUnauthorizedHandler(() =>
+      logout("פג תוקף ההתחברות, נא להתחבר מחדש.")
+    );
   }, [logout]);
 
   useEffect(() => {
     clearTimers();
     setExpiringSoon(false);
+
     if (!session) return;
 
     const msUntilExpiry = session.expiresAt - Date.now();
+
     if (msUntilExpiry <= 0) {
       logout("פג תוקף ההתחברות, נא להתחבר מחדש.");
       return;
     }
 
-    const msUntilWarning = Math.max(msUntilExpiry - WARNING_WINDOW_MS, 0);
-    timers.current.push(setTimeout(() => setExpiringSoon(true), msUntilWarning));
-    timers.current.push(setTimeout(() => logout("פג תוקף ההתחברות, נא להתחבר מחדש."), msUntilExpiry));
+    const msUntilWarning = Math.max(
+      msUntilExpiry - WARNING_WINDOW_MS,
+      0
+    );
+
+    timers.current.push(
+      setTimeout(() => setExpiringSoon(true), msUntilWarning)
+    );
+
+    timers.current.push(
+      setTimeout(
+        () => logout("פג תוקף ההתחברות, נא להתחבר מחדש."),
+        msUntilExpiry
+      )
+    );
 
     return clearTimers;
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -67,15 +107,20 @@ export function AuthProvider({ children }) {
 
   const login = useCallback(async (email, password) => {
     const { token } = await authApi.login(email, password);
+
+    const name = getNameFromToken(token);
+
     localStorage.setItem(TOKEN_KEY, token);
-    localStorage.setItem(NAME_KEY, email);
+    localStorage.setItem(NAME_KEY, name);
+
     setSession({
       token,
       role: getRoleFromToken(token),
       userId: getUserIdFromToken(token),
-      name: email,
+      name,
       expiresAt: getExpiryMs(token),
     });
+
     return true;
   }, []);
 
@@ -94,11 +139,19 @@ export function AuthProvider({ children }) {
     [session, login, logout, expiringSoon]
   );
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used inside AuthProvider");
+
+  if (!ctx) {
+    throw new Error("useAuth must be used inside AuthProvider");
+  }
+
   return ctx;
 }
