@@ -1,7 +1,13 @@
 import { apiClient } from "./client";
 
-export async function getSeats(pageNumber = 1, pageSize = 100) {
-  const res = await apiClient.get("/Seat", { params: { pageNumber, pageSize } });
+export async function getSeats(pageNumber = 1, pageSize = 100, row = null) {
+  const params = { pageNumber, pageSize };
+
+  if (row !== null && row !== "") {
+    params.row = Number(row);
+  }
+
+  const res = await apiClient.get("/Seat", { params });
   return res.data;
 }
 
