@@ -104,7 +104,9 @@ export default function AdminSeats() {
 
                 <div className="panel-body">
                     {formError && (
-                        <div className="alert alert-danger">{formError}</div>
+                        <div className="alert alert-danger">
+                            {formError}
+                        </div>
                     )}
 
                     <form onSubmit={handleSubmit}>
@@ -160,36 +162,42 @@ export default function AdminSeats() {
                     <h2>כל המושבים</h2>
                 </div>
 
-                <div className="field" style={{ maxWidth: "320px" }}>
-                    <label htmlFor="seat-row-filter">
-                        חיפוש לפי שורה
-                    </label>
+                <div className="panel-body">
+                    <div
+                        className="field"
+                        style={{ maxWidth: "320px" }}
+                    >
+                        <label htmlFor="seat-row-filter">
+                            חיפוש לפי שורה
+                        </label>
 
-                    <div className="field-row">
-                        <input
-                            id="seat-row-filter"
-                            type="number"
-                            min={1}
-                            value={rowFilter}
-                            onChange={handleRowFilterChange}
-                            placeholder="מספר שורה"
-                            style={{ maxWidth: "180px" }}
-                        />
+                        <div className="field-row">
+                            <input
+                                id="seat-row-filter"
+                                type="number"
+                                min={1}
+                                value={rowFilter}
+                                onChange={handleRowFilterChange}
+                                placeholder="מספר שורה"
+                                style={{ maxWidth: "180px" }}
+                            />
 
-                        {rowFilter !== "" && (
-                            <button
-                                className="btn btn-secondary"
-                                type="button"
-                                onClick={clearRowFilter}
-                            >
-                                ניקוי
-                            </button>
-                        )}
+                            {rowFilter !== "" && (
+                                <button
+                                    className="btn btn-secondary"
+                                    type="button"
+                                    onClick={clearRowFilter}
+                                >
+                                    ניקוי
+                                </button>
+                            )}
+                        </div>
                     </div>
-                </div>
 
                     {error && (
-                        <div className="alert alert-danger">{error}</div>
+                        <div className="alert alert-danger">
+                            {error}
+                        </div>
                     )}
 
                     {loading ? (
@@ -224,8 +232,13 @@ export default function AdminSeats() {
                                             <td>
                                                 <button
                                                     className="btn btn-danger btn-sm"
-                                                    onClick={() => handleDelete(seat)}
-                                                    disabled={deletingId === seat.id}
+                                                    onClick={() =>
+                                                        handleDelete(seat)
+                                                    }
+                                                    disabled={
+                                                        deletingId ===
+                                                        seat.id
+                                                    }
                                                 >
                                                     {deletingId === seat.id
                                                         ? "מוחק..."
