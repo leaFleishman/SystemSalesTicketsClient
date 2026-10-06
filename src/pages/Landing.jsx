@@ -73,15 +73,6 @@ export default function Landing() {
                       d="M198 6 C 150 1.5, 90 10.5, 3 5"
                     />
                   </svg>
-                  <svg
-                    className="lp-draw-pen"
-                    viewBox="0 0 24 24"
-                    width="22"
-                    height="22"
-                  >
-                    <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
-                    <path d="m15 5 4 4" />
-                  </svg>
                 </i>
               </span>
             </h1>
