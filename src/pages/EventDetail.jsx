@@ -169,7 +169,6 @@ export default function EventDetail() {
     );
 
     const filteredSeats = seats.filter((seat) => {
-        if (!seat.isAvailable) return false;
         if (!rowFilter.trim()) return true;
         return String(seat.row).trim() === rowFilter.trim();
     });
@@ -249,13 +248,14 @@ export default function EventDetail() {
                                 )}
                                 <div className="legend" aria-hidden="true">
                                     <span><i /> פנוי</span>
+                                    <span><i className="taken" /> תפוס</span>
                                     <span><i className="sel" /> נבחר</span>
                                 </div>
                             </div>
 
                             {filteredSeats.length === 0 ? (
                                 <EmptyState
-                                    title="אין מושבים פנויים בשורה הזו"
+                                    title="לא נמצאו מושבים בשורה הזו"
                                     description="נסו מספר שורה אחר או נקו את הסינון כדי לראות את כל המושבים."
                                 />
                             ) : (
@@ -266,20 +266,26 @@ export default function EventDetail() {
                                             <div className="seat-row" key={row}>
                                                 <span className="seat-row-label">{row}</span>
                                                 <div className="seat-row-seats">
-                                                    {list.map((seat) => (
-                                                        <button
-                                                            key={seat.seatId}
-                                                            type="button"
-                                                            className={`seat${selectedSeat?.seatId === seat.seatId ? " selected" : ""}`}
-                                                            onClick={() => handleSelectSeat(seat)}
-                                                            disabled={event.isCancelled}
-                                                            title={`שורה ${seat.row} · טור ${seat.line}`}
-                                                            aria-label={`שורה ${seat.row} טור ${seat.line}`}
-                                                            aria-pressed={selectedSeat?.seatId === seat.seatId}
-                                                        >
-                                                            {seat.line}
-                                                        </button>
-                                                    ))}
+                                                    {list.map((seat) => {
+                                                        const isTaken = !seat.isAvailable;
+                                                        const isSelected = selectedSeat?.seatId === seat.seatId;
+                                                        const seatLabel = `שורה ${seat.row} טור ${seat.line}`;
+
+                                                        return (
+                                                            <button
+                                                                key={seat.seatId}
+                                                                type="button"
+                                                                className={`seat${isTaken ? " taken" : ""}${isSelected ? " selected" : ""}`}
+                                                                onClick={() => handleSelectSeat(seat)}
+                                                                disabled={event.isCancelled || isTaken}
+                                                                title={isTaken ? `${seatLabel} · תפוס` : seatLabel}
+                                                                aria-label={isTaken ? `${seatLabel}, תפוס` : seatLabel}
+                                                                aria-pressed={isSelected}
+                                                            >
+                                                                {isTaken ? "✕" : seat.line}
+                                                            </button>
+                                                        );
+                                                    })}
                                                 </div>
                                             </div>
                                         ))}
