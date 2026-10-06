@@ -11,164 +11,270 @@ import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 
 export default function EventDetail() {
-  const { name } = useParams();
-  const navigate = useNavigate();
-  const { userId } = useAuth();
-  const toast = useToast();
+    const { name } = useParams();
+    const navigate = useNavigate();
+    const { userId } = useAuth();
+    const toast = useToast();
 
-  const [event, setEvent] = useState(null);
-  const [seats, setSeats] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [selectedSeat, setSelectedSeat] = useState(null);
-  const [booking, setBooking] = useState(false);
-  const [bookingError, setBookingError] = useState("");
+    const [event, setEvent] = useState(null);
+    const [seats, setSeats] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
+    const [selectedSeat, setSelectedSeat] = useState(null);
+    const [booking, setBooking] = useState(false);
+    const [bookingError, setBookingError] = useState("");
 
-  const load = () => {
-    let cancelled = false;
-    setLoading(true);
-    setError("");
+    const load = () => {
+        let cancelled = false;
 
-    eventsApi
-      .getEventByName(name)
-      .then((eventData) => {
-        if (cancelled) return;
-        setEvent(eventData);
-        return eventSeatsApi.getSeatsForEvent(eventData.id);
-      })
-      .then((eventSeats) => {
-        if (cancelled) return;
-        setSeats(eventSeats || []);
-      })
-      .catch((err) => {
-        if (!cancelled) setError(extractErrorMessage(err, "לא ניתן לטעון את פרטי האירוע."));
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
+        setLoading(true);
+        setError("");
 
-    return () => {
-      cancelled = true;
+        eventsApi
+            .getEventByName(name)
+            .then((eventData) => {
+                if (cancelled) return;
+
+                setEvent(eventData);
+                return eventSeatsApi.getSeatsForEvent(eventData.id);
+            })
+            .then((eventSeats) => {
+                if (cancelled) return;
+
+                setSeats(eventSeats || []);
+            })
+            .catch((err) => {
+                if (!cancelled) {
+                    setError(
+                        extractErrorMessage(
+                            err,
+                            "לא ניתן לטעון את פרטי האירוע."
+                        )
+                    );
+                }
+            })
+            .finally(() => {
+                if (!cancelled) {
+                    setLoading(false);
+                }
+            });
+
+        return () => {
+            cancelled = true;
+        };
     };
-  };
 
-  useEffect(load, [name]); // eslint-disable-line react-hooks/exhaustive-deps
+    useEffect(load, [name]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleSelectSeat = (seat) => {
-    if (!seat.isAvailable || event?.isCancelled) return;
-    setSelectedSeat(seat);
-    setBookingError("");
-  };
+    const handleSelectSeat = (seat) => {
+        if (!seat.isAvailable || event?.isCancelled) return;
 
-  const handleBook = async () => {
-    if (event?.isCancelled) {
-      setBookingError("האירוע בוטל ולא ניתן להזמין אליו כרטיסים.");
-      return;
+        setSelectedSeat(seat);
+        setBookingError("");
+    };
+
+    const handleBook = async () => {
+        if (event?.isCancelled) {
+            setBookingError(
+                "האירוע בוטל ולא ניתן להזמין אליו כרטיסים."
+            );
+            return;
+        }
+
+        if (!selectedSeat) {
+            setBookingError("בחרו מושב תחילה.");
+            return;
+        }
+
+        setBooking(true);
+        setBookingError("");
+
+        try {
+            const result = await ordersApi.createOrder({
+                eventId: selectedSeat.eventId,
+                seatId: selectedSeat.seatId,
+                userId,
+            });
+
+            toast.success("ההזמנה בוצעה בהצלחה!");
+
+            navigate("/order-confirmation", {
+                state: {
+                    order: result,
+                    eventName: event.name,
+                },
+            });
+        } catch (err) {
+            const status = err?.response?.status;
+
+            if (status === 409) {
+                setBookingError(
+                    extractErrorMessage(
+                        err,
+                        "המושב הזה כבר תפוס. נסו מושב אחר."
+                    )
+                );
+
+                load();
+            } else if (status === 404) {
+                setBookingError(
+                    extractErrorMessage(
+                        err,
+                        "המושב לא נמצא. רעננו את הדף ונסו שוב."
+                    )
+                );
+            } else {
+                setBookingError(extractErrorMessage(err));
+            }
+        } finally {
+            setBooking(false);
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="page">
+                <Spinner />
+            </div>
+        );
     }
-    if (!selectedSeat) {
-      setBookingError("בחרו מושב תחילה.");
-      return;
-    }
-    setBooking(true);
-    setBookingError("");
-    try {
-      const result = await ordersApi.createOrder({
-        eventId: selectedSeat.eventId,
-        seatId: selectedSeat.seatId,
-        userId,
-      });
-      toast.success("ההזמנה בוצעה בהצלחה!");
-      navigate("/order-confirmation", { state: { order: result, eventName: event.name } });
-    } catch (err) {
-      const status = err?.response?.status;
-      if (status === 409) {
-        setBookingError(extractErrorMessage(err, "המושב הזה כבר תפוס. נסו מושב אחר."));
-        load();
-      } else if (status === 404) {
-        setBookingError(extractErrorMessage(err, "המושב לא נמצא. רעננו את הדף ונסו שוב."));
-      } else {
-        setBookingError(extractErrorMessage(err));
-      }
-    } finally {
-      setBooking(false);
-    }
-  };
 
-  if (loading) return <div className="page"><Spinner /></div>;
+    if (error || !event) {
+        return (
+            <div className="page">
+                <EmptyState
+                    title="האירוע לא נמצא"
+                    description={error || "ייתכן שהאירוע הוסר."}
+                />
+            </div>
+        );
+    }
 
-  if (error || !event) {
-    return (
-      <div className="page">
-        <EmptyState title="האירוע לא נמצא" description={error || "ייתכן שהאירוע הוסר."} />
-      </div>
+    // מספר המקומות הכולל באירוע
+    const totalSeats = event.numberOfSeats ?? seats.length;
+
+    // מספר הכרטיסים שכבר נקנו
+    // מושב שאינו זמין = כבר הוזמן
+    const soldTickets = seats.filter(
+        (seat) => !seat.isAvailable
+    ).length;
+
+    // מספר המקומות הפנויים
+    const availableTickets = Math.max(
+        totalSeats - soldTickets,
+        0
     );
-  }
 
-  return (
-    <div className="page">
-      <div className="page-header">
-        <div>
-          <div className="eyebrow">פרטי אירוע</div>
-          <h1>{event.name}</h1>
-          <p>
-            {formatDate(event.date)} · {event.numberOfSeats} מקומות · {formatPrice(event.price)} לכרטיס
-          </p>
-        </div>
-      </div>
+    return (
+        <div className="page">
+            <div className="page-header">
+                <div>
+                    <div className="eyebrow">פרטי אירוע</div>
 
-      {event.isCancelled && (
-        <div className="alert alert-danger">
-          <strong>האירוע בוטל.</strong>
-          {event.cancellationReason && <> {event.cancellationReason}</>}
-          <div>לא ניתן להזמין כרטיסים לאירוע זה.</div>
-        </div>
-      )}
+                    <h1>{event.name}</h1>
 
-      <div className="panel">
-        <div className="panel-header">
-          <h2>בחירת מושב</h2>
-          <span className="badge badge-neutral">{seats.length} מושבים משויכים לאירוע</span>
-        </div>
-        <div className="panel-body">
-          {seats.length === 0 ? (
-            <EmptyState
-              title="אין עדיין מושבים משויכים לאירוע"
-              description="פנו למנהל המערכת כדי לשייך מושבים לאירוע לפני שניתן להזמין כרטיסים."
-            />
-          ) : (
-            <>
-              <div className="seat-grid">
-                {seats.map((seat) => (
-                  <button
-                    key={seat.seatId}
-                    className={`seat-tile${selectedSeat?.seatId === seat.seatId ? " selected" : ""}`}
-                    onClick={() => handleSelectSeat(seat)}
-                    type="button"
-                    disabled={!seat.isAvailable || event.isCancelled}
-                  >
-                    <div className="seat-tile-label">
-                      {seat.row}-{seat.line}
-                    </div>
-                    <div className="seat-tile-sub">{seat.isAvailable ? "שורה · טור" : "תפוס"}</div>
-                  </button>
-                ))}
-              </div>
+                    <p>
+                        {formatDate(event.date)} ·{" "}
+                        {totalSeats} מקומות ·{" "}
+                        {formatPrice(event.price)} לכרטיס
+                    </p>
 
-              {selectedSeat && !event.isCancelled && (
-                <div className="stack-16 mt-24">
-                  {bookingError && <div className="alert alert-danger">{bookingError}</div>}
-
-                  <div>
-                    <button className="btn btn-primary" onClick={handleBook} disabled={booking}>
-                      {booking ? "מבצע הזמנה..." : `הזמנת מושב ${selectedSeat.row}-${selectedSeat.line}`}
-                    </button>
-                  </div>
+                    {/* כמות הכרטיסים שנקנו */}
+                    <p>
+                        <strong>{soldTickets}</strong>{" "}
+                        כרטיסים נקנו מתוך{" "}
+                        <strong>{totalSeats}</strong>
+                        {" · "}
+                        <strong>{availableTickets}</strong>{" "}
+                        מקומות פנויים
+                    </p>
                 </div>
-              )}
-            </>
-          )}
+            </div>
+
+            {event.isCancelled && (
+                <div className="alert alert-danger">
+                    <strong>האירוע בוטל.</strong>
+
+                    {event.cancellationReason && (
+                        <> {event.cancellationReason}</>
+                    )}
+
+                    <div>
+                        לא ניתן להזמין כרטיסים לאירוע זה.
+                    </div>
+                </div>
+            )}
+
+            <div className="panel">
+                <div className="panel-header">
+                    <h2>בחירת מושב</h2>
+
+                    <span className="badge badge-neutral">
+                        {availableTickets} מושבים פנויים
+                    </span>
+                </div>
+
+                <div className="panel-body">
+                    {seats.length === 0 ? (
+                        <EmptyState
+                            title="אין עדיין מושבים משויכים לאירוע"
+                            description="פנו למנהל המערכת כדי לשייך מושבים לאירוע לפני שניתן להזמין כרטיסים."
+                        />
+                    ) : (
+                        <>
+                            <div className="seat-grid">
+                                {seats.map((seat) => (
+                                    <button
+                                        key={seat.seatId}
+                                        className={`seat-tile${selectedSeat?.seatId === seat.seatId
+                                                ? " selected"
+                                                : ""
+                                            }`}
+                                        onClick={() => handleSelectSeat(seat)}
+                                        type="button"
+                                        disabled={
+                                            !seat.isAvailable ||
+                                            event.isCancelled
+                                        }
+                                    >
+                                        <div className="seat-tile-label">
+                                            {seat.row}-{seat.line}
+                                        </div>
+
+                                        <div className="seat-tile-sub">
+                                            {seat.isAvailable
+                                                ? "שורה · טור"
+                                                : "תפוס"}
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+
+                            {selectedSeat && !event.isCancelled && (
+                                <div className="stack-16 mt-24">
+                                    {bookingError && (
+                                        <div className="alert alert-danger">
+                                            {bookingError}
+                                        </div>
+                                    )}
+
+                                    <div>
+                                        <button
+                                            className="btn btn-primary"
+                                            onClick={handleBook}
+                                            disabled={booking}
+                                        >
+                                            {booking
+                                                ? "מבצע הזמנה..."
+                                                : `הזמנת מושב ${selectedSeat.row}-${selectedSeat.line}`}
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </>
+                    )}
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
-  );
+    );
 }
