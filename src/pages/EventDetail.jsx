@@ -170,58 +170,52 @@ export default function EventDetail() {
 
     const filteredSeats = seats.filter((seat) => {
         if (!seat.isAvailable) return false;
-
         if (!rowFilter.trim()) return true;
-
         return String(seat.row).trim() === rowFilter.trim();
     });
 
+    const rows = Object.entries(
+        filteredSeats.reduce((acc, seat) => {
+            (acc[seat.row] = acc[seat.row] || []).push(seat);
+            return acc;
+        }, {})
+    )
+        .sort((a, b) => Number(a[0]) - Number(b[0]))
+        .map(([row, list]) => [row, list.sort((a, b) => Number(a.line) - Number(b.line))]);
+
+    const soldPct = totalSeats ? Math.min(100, Math.round((soldTickets / totalSeats) * 100)) : 0;
+
     return (
         <div className="page">
-            <div className="page-header">
+            <div className="event-hero">
                 <div>
-                    <div className="eyebrow">פרטי אירוע</div>
-
                     <h1>{event.name}</h1>
-
-                    <p>
-                        {formatDate(event.date)} ·{" "}
-                        {totalSeats} מקומות ·{" "}
-                        {formatPrice(event.price)} לכרטיס
-                    </p>
-
-                    <p>
-                        <strong>{soldTickets}</strong>{" "}
-                        כרטיסים נקנו מתוך{" "}
-                        <strong>{totalSeats}</strong>
-                        {" · "}
-                        <strong>{availableTickets}</strong>{" "}
-                        מקומות פנויים
-                    </p>
+                    <div className="chips">
+                        <span className="chip">{formatDate(event.date)}</span>
+                        <span className="chip">{formatPrice(event.price)} לכרטיס</span>
+                        <span className="chip">{totalSeats} מקומות</span>
+                    </div>
+                </div>
+                <div className="event-hero-stats">
+                    <strong>{availableTickets}</strong>
+                    <small>מושבים פנויים</small>
+                    <div className="meter"><i style={{ width: `${soldPct}%` }} /></div>
+                    <small>{soldTickets} כרטיסים נקנו מתוך {totalSeats}</small>
                 </div>
             </div>
 
             {event.isCancelled && (
                 <div className="alert alert-danger">
                     <strong>האירוע בוטל.</strong>
-
-                    {event.cancellationReason && (
-                        <> {event.cancellationReason}</>
-                    )}
-
-                    <div>
-                        לא ניתן להזמין כרטיסים לאירוע זה.
-                    </div>
+                    {event.cancellationReason && <> {event.cancellationReason}</>}
+                    <div>לא ניתן להזמין כרטיסים לאירוע זה.</div>
                 </div>
             )}
 
             <div className="panel">
                 <div className="panel-header">
                     <h2>בחירת מושב</h2>
-
-                    <span className="badge badge-neutral">
-                        {availableTickets} מושבים פנויים
-                    </span>
+                    <span className="badge badge-neutral">{availableTickets} מושבים פנויים</span>
                 </div>
 
                 <div className="panel-body">
@@ -232,26 +226,9 @@ export default function EventDetail() {
                         />
                     ) : (
                         <>
-                            {/* סינון לפי שורה */}
-                            <div
-                                style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: "10px",
-                                    marginBottom: "24px",
-                                    direction: "rtl",
-                                }}
-                            >
-                                <label
-                                    htmlFor="row-filter"
-                                    style={{
-                                        fontSize: "14px",
-                                        color: "#6b7280",
-                                        whiteSpace: "nowrap",
-                                    }}
-                                >
-                                    שורה:
-                                </label>
+                            <div className="seat-tools">
+                                <div className="field">
+                                    <label htmlFor="row-filter">שורה</label>
                                     <input
                                         id="row-filter"
                                         type="text"
@@ -263,62 +240,18 @@ export default function EventDetail() {
                                             setBookingError("");
                                         }}
                                         placeholder="כל השורות"
-                                        style={{
-                                            width: "110px",
-                                            height: "36px",
-                                            padding: "0 12px",
-                                            border: "1px solid #d9e5dc",
-                                            borderRadius: "8px",
-                                            background: "#fcfdfc",
-                                            color: "#374151",
-                                            fontSize: "14px",
-                                            outline: "none",
-                                            transition:
-                                                "border-color 0.2s ease, box-shadow 0.2s ease",
-                                        }}
-                                        onFocus={(e) => {
-                                            e.target.style.borderColor = "#86b894";
-                                            e.target.style.boxShadow =
-                                                "0 0 0 3px rgba(76, 175, 80, 0.12)";
-                                        }}
-                                        onBlur={(e) => {
-                                            e.target.style.borderColor = "#d9e5dc";
-                                            e.target.style.boxShadow = "none";
-                                        }}
                                     />
-
+                                </div>
                                 {rowFilter && (
-                                    <button
-                                        type="button"
-                                        onClick={clearRowFilter}
-                                        style={{
-                                            border: "none",
-                                            background: "transparent",
-                                            color: "#9ca3af",
-                                            fontSize: "13px",
-                                            cursor: "pointer",
-                                            padding: "4px 6px",
-                                        }}
-                                    >
-                                        נקה
+                                    <button type="button" className="btn btn-ghost btn-sm" onClick={clearRowFilter}>
+                                        ניקוי
                                     </button>
                                 )}
-                            </div>
-
-                            {rowFilter && (
-                                <div
-                                    style={{
-                                        marginBottom: "16px",
-                                        fontSize: "14px",
-                                        color: "#6b7280",
-                                    }}
-                                >
-                                    מציג מושבים פנויים בשורה{" "}
-                                    <strong>{rowFilter}</strong>
-                                    {" · "}
-                                    {filteredSeats.length} מושבים נמצאו
+                                <div className="legend" aria-hidden="true">
+                                    <span><i /> פנוי</span>
+                                    <span><i className="sel" /> נבחר</span>
                                 </div>
-                            )}
+                            </div>
 
                             {filteredSeats.length === 0 ? (
                                 <EmptyState
@@ -326,50 +259,44 @@ export default function EventDetail() {
                                     description="נסו מספר שורה אחר או נקו את הסינון כדי לראות את כל המושבים."
                                 />
                             ) : (
-                                <div className="seat-grid">
-                                    {filteredSeats.map((seat) => (
-                                        <button
-                                            key={seat.seatId}
-                                            className={`seat-tile${selectedSeat?.seatId ===
-                                                    seat.seatId
-                                                    ? " selected"
-                                                    : ""
-                                                }`}
-                                            onClick={() =>
-                                                handleSelectSeat(seat)
-                                            }
-                                            type="button"
-                                            disabled={event.isCancelled}
-                                        >
-                                            <div className="seat-tile-label">
-                                                {seat.row}-{seat.line}
+                                <>
+                                    <div className="stage">במה</div>
+                                    <div className="seat-map">
+                                        {rows.map(([row, list]) => (
+                                            <div className="seat-row" key={row}>
+                                                <span className="seat-row-label">{row}</span>
+                                                <div className="seat-row-seats">
+                                                    {list.map((seat) => (
+                                                        <button
+                                                            key={seat.seatId}
+                                                            type="button"
+                                                            className={`seat${selectedSeat?.seatId === seat.seatId ? " selected" : ""}`}
+                                                            onClick={() => handleSelectSeat(seat)}
+                                                            disabled={event.isCancelled}
+                                                            title={`שורה ${seat.row} · טור ${seat.line}`}
+                                                            aria-label={`שורה ${seat.row} טור ${seat.line}`}
+                                                            aria-pressed={selectedSeat?.seatId === seat.seatId}
+                                                        >
+                                                            {seat.line}
+                                                        </button>
+                                                    ))}
+                                                </div>
                                             </div>
-
-                                            <div className="seat-tile-sub">
-                                                שורה · טור
-                                            </div>
-                                        </button>
-                                    ))}
-                                </div>
+                                        ))}
+                                    </div>
+                                </>
                             )}
 
                             {selectedSeat && !event.isCancelled && (
-                                <div className="stack-16 mt-24">
-                                    {bookingError && (
-                                        <div className="alert alert-danger">
-                                            {bookingError}
-                                        </div>
-                                    )}
-
+                                <div className="book-bar">
                                     <div>
-                                        <button
-                                            className="btn btn-primary"
-                                            onClick={handleBook}
-                                            disabled={booking}
-                                        >
-                                            {booking
-                                                ? "מבצע הזמנה..."
-                                                : `הזמנת מושב ${selectedSeat.row}-${selectedSeat.line}`}
+                                        <b>שורה {selectedSeat.row} · טור {selectedSeat.line}</b>
+                                        <small>{formatPrice(event.price)} לכרטיס</small>
+                                    </div>
+                                    <div className="stack-8" style={{ alignItems: "flex-end" }}>
+                                        {bookingError && <div className="alert alert-danger" style={{ margin: 0 }}>{bookingError}</div>}
+                                        <button className="btn btn-primary" onClick={handleBook} disabled={booking}>
+                                            {booking ? "מבצע הזמנה..." : "הזמנת המושב"}
                                         </button>
                                     </div>
                                 </div>

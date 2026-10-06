@@ -37,9 +37,12 @@ export default function Navbar() {
 
         {isAuthenticated ? (
           <div className="nav-user">
-            <div>
-              <div className="nav-user-name">{session.name}</div>
-              <span className="nav-user-role">{roleLabel(session.role)}</span>
+            <div className="nav-user-info">
+              <span className="avatar" aria-hidden="true">{(session.name || "?").trim().charAt(0).toUpperCase()}</span>
+              <div>
+                <div className="nav-user-name">{session.name}</div>
+                <span className="nav-user-role">{roleLabel(session.role)}</span>
+              </div>
             </div>
             <button className="btn btn-ghost btn-sm" onClick={handleLogout}>
               התנתקות

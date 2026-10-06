@@ -59,7 +59,10 @@ export default function Events() {
       ) : (
         <>
           <div className="ticket-grid">
-            {page.data.map((ev) => (
+            {page.data.map((ev) => {
+              const d = new Date(ev.date);
+              const valid = !Number.isNaN(d.getTime());
+              return (
               <Link
                 to={`/events/${encodeURIComponent(ev.name)}`}
                 key={ev.id}
@@ -74,11 +77,13 @@ export default function Events() {
                   </div>
                 </div>
                 <div className="ticket-stub">
-                  <span className="ticket-price-label">מחיר</span>
+                  <span className="ticket-day">{valid ? d.getDate() : "—"}</span>
+                  <span className="ticket-month">{valid ? d.toLocaleDateString("he-IL", { month: "short" }) : ""}</span>
                   <span className="ticket-price">{formatPrice(ev.price)}</span>
                 </div>
               </Link>
-            ))}
+              );
+            })}
           </div>
           <Pagination
             pageNumber={page.pageNumber}
