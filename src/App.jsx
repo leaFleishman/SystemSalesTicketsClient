@@ -13,6 +13,7 @@ import NotFound from "./pages/NotFound";
 import Unauthorized from "./pages/Unauthorized";
 
 import AdminLayout from "./pages/admin/AdminLayout";
+import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminEvents from "./pages/admin/AdminEvents";
 import AdminSeats from "./pages/admin/AdminSeats";
 import AdminEventSeats from "./pages/admin/AdminEventSeats";
@@ -26,32 +27,108 @@ export default function App() {
     <div className="app-shell">
       <Navbar />
       <SessionExpiryModal />
+
       <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/unauthorized" element={<Unauthorized />} />
-        <Route path="/" element={<Home />} />
+        <Route
+          path="/login"
+          element={<Login />}
+        />
+
+        <Route
+          path="/register"
+          element={<Register />}
+        />
+
+        <Route
+          path="/unauthorized"
+          element={<Unauthorized />}
+        />
+
+        <Route
+          path="/"
+          element={<Home />}
+        />
 
         <Route element={<ProtectedRoute />}>
-          <Route path="/events/:name" element={<EventDetail />} />
-          <Route path="/order-confirmation" element={<OrderConfirmation />} />
-          <Route path="/my-orders" element={<MyOrders />} />
+          <Route
+            path="/events/:name"
+            element={<EventDetail />}
+          />
 
-          <Route element={<RoleRoute roles={["Manager"]} />}>
-            <Route path="/admin" element={<AdminLayout />}>
-              <Route index element={<Navigate to="events" replace />} />
-              <Route path="events" element={<AdminEvents />} />
-              <Route path="seats" element={<AdminSeats />} />
-              <Route path="event-seats" element={<AdminEventSeats />} />
-              <Route path="orders" element={<AdminOrders />} />
-              <Route path="orders/:id" element={<AdminOrderDetail />} />
-              <Route path="users" element={<AdminUsers />} />
-              <Route path="users/:id" element={<AdminUserDetail />} />
+          <Route
+            path="/order-confirmation"
+            element={<OrderConfirmation />}
+          />
+
+          <Route
+            path="/my-orders"
+            element={<MyOrders />}
+          />
+
+          <Route
+            element={<RoleRoute roles={["Manager"]} />}
+          >
+            <Route
+              path="/admin"
+              element={<AdminLayout />}
+            >
+              <Route
+                index
+                element={
+                  <Navigate
+                    to="dashboard"
+                    replace
+                  />
+                }
+              />
+
+              <Route
+                path="dashboard"
+                element={<AdminDashboard />}
+              />
+
+              <Route
+                path="events"
+                element={<AdminEvents />}
+              />
+
+              <Route
+                path="seats"
+                element={<AdminSeats />}
+              />
+
+              <Route
+                path="event-seats"
+                element={<AdminEventSeats />}
+              />
+
+              <Route
+                path="orders"
+                element={<AdminOrders />}
+              />
+
+              <Route
+                path="orders/:id"
+                element={<AdminOrderDetail />}
+              />
+
+              <Route
+                path="users"
+                element={<AdminUsers />}
+              />
+
+              <Route
+                path="users/:id"
+                element={<AdminUserDetail />}
+              />
             </Route>
           </Route>
         </Route>
 
-        <Route path="*" element={<NotFound />} />
+        <Route
+          path="*"
+          element={<NotFound />}
+        />
       </Routes>
     </div>
   );
