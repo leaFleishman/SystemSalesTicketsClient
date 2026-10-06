@@ -9,133 +9,249 @@ import { useAuth } from "../../context/AuthContext";
 import { roleLabel } from "../../utils/format";
 
 // Must match "OriginalAdmin:Email" on the server (the server is what actually enforces it).
-const ORIGINAL_ADMIN_EMAIL = (import.meta.env.VITE_ORIGINAL_ADMIN_EMAIL || "admin@example.com").toLowerCase();
+const ORIGINAL_ADMIN_EMAIL = (
+    import.meta.env.VITE_ORIGINAL_ADMIN_EMAIL || "admin@example.com"
+).toLowerCase();
 
 export default function AdminUserDetail() {
-  const { id } = useParams();
-  const toast = useToast();
-  const { session, userId } = useAuth();
-  const isOriginalAdmin = (session?.name || "").trim().toLowerCase() === ORIGINAL_ADMIN_EMAIL;
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [promoting, setPromoting] = useState(false);
-  const [demoting, setDemoting] = useState(false);
-  const [togglingBlock, setTogglingBlock] = useState(false);
+    const { id } = useParams();
+    const toast = useToast();
+    const { session, userId } = useAuth();
 
-  const load = () => {
-    setLoading(true);
-    setError("");
-    usersApi
-      .getUserById(id)
-      .then(setUser)
-      .catch((err) => setError(extractErrorMessage(err, "לא ניתן לטעון את פרטי המשתמש.")))
-      .finally(() => setLoading(false));
-  };
+    const isOriginalAdmin =
+        (session?.name || "").trim().toLowerCase() === ORIGINAL_ADMIN_EMAIL;
 
-  useEffect(load, [id]); // eslint-disable-line react-hooks/exhaustive-deps
+    const [user, setUser] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
+    const [promoting, setPromoting] = useState(false);
+    const [demoting, setDemoting] = useState(false);
+    const [togglingBlock, setTogglingBlock] = useState(false);
 
-  const handlePromote = async () => {
-    setPromoting(true);
-    try {
-      const updated = await usersApi.makeUserManager(id);
-      toast.success("המשתמש קודם לתפקיד מנהל.");
-      setUser((u) => ({ ...u, ...updated }));
-    } catch (err) {
-      toast.error(extractErrorMessage(err, "קידום המשתמש נכשל."));
-    } finally {
-      setPromoting(false);
+    const load = () => {
+        setLoading(true);
+        setError("");
+
+        usersApi
+            .getUserById(id)
+            .then(setUser)
+            .catch((err) =>
+                setError(
+                    extractErrorMessage(
+                        err,
+                        "לא ניתן לטעון את פרטי המשתמש."
+                    )
+                )
+            )
+            .finally(() => setLoading(false));
+    };
+
+    useEffect(load, [id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    const handlePromote = async () => {
+        setPromoting(true);
+
+        try {
+            const updated = await usersApi.makeUserManager(id);
+
+            toast.success("המשתמש קודם לתפקיד מנהל.");
+
+            setUser((u) => ({
+                ...u,
+                ...updated,
+                role: "Manager",
+            }));
+        } catch (err) {
+            toast.error(
+                extractErrorMessage(err, "קידום המשתמש נכשל.")
+            );
+        } finally {
+            setPromoting(false);
+        }
+    };
+
+    const handleDemote = async () => {
+        if (!window.confirm("להחזיר את המנהל למשתמש רגיל?")) return;
+
+        setDemoting(true);
+
+        try {
+            await usersApi.makeUserRegular(id);
+
+            toast.success("המנהל הוחזר למשתמש רגיל.");
+
+            setUser((u) => ({
+                ...u,
+                role: "User",
+            }));
+        } catch (err) {
+            toast.error(
+                extractErrorMessage(err, "הורדת התפקיד נכשלה.")
+            );
+        } finally {
+            setDemoting(false);
+        }
+    };
+
+    const handleToggleBlock = async () => {
+        const blocking = !user.isBlocked;
+
+        const question = blocking
+            ? "לחסום את המשתמש? הוא לא יוכל להתחבר."
+            : "להפעיל מחדש את המשתמש?";
+
+        if (!window.confirm(question)) return;
+
+        setTogglingBlock(true);
+
+        try {
+            const updated = blocking
+                ? await usersApi.blockUser(id)
+                : await usersApi.unblockUser(id);
+
+            toast.success(
+                blocking
+                    ? "המשתמש נחסם."
+                    : "המשתמש הופעל מחדש."
+            );
+
+            setUser((u) => ({
+                ...u,
+                isBlocked: updated?.isBlocked ?? blocking,
+            }));
+        } catch (err) {
+            toast.error(
+                extractErrorMessage(
+                    err,
+                    blocking
+                        ? "חסימת המשתמש נכשלה."
+                        : "הפעלת המשתמש נכשלה."
+                )
+            );
+        } finally {
+            setTogglingBlock(false);
+        }
+    };
+
+    if (loading) return <Spinner />;
+
+    if (error || !user) {
+        return (
+            <EmptyState
+                title="המשתמש לא נמצא"
+                description={error}
+            />
+        );
     }
-  };
 
-  const handleDemote = async () => {
-    if (!window.confirm("להחזיר את המנהל למשתמש רגיל?")) return;
-    setDemoting(true);
-    try {
-      await usersApi.makeUserRegular(id);
-      toast.success("המנהל הוחזר למשתמש רגיל.");
-      setUser((u) => ({ ...u, role: "User" }));
-    } catch (err) {
-      toast.error(extractErrorMessage(err, "הורדת התפקיד נכשלה."));
-    } finally {
-      setDemoting(false);
-    }
-  };
+    return (
+        <div className="panel">
+            <div className="panel-header">
+                <h2>משתמש #{user.id || id}</h2>
 
-  const handleToggleBlock = async () => {
-    const blocking = !user.isBlocked;
-    const question = blocking ? "לחסום את המשתמש? הוא לא יוכל להתחבר." : "להפעיל מחדש את המשתמש?";
-    if (!window.confirm(question)) return;
-    setTogglingBlock(true);
-    try {
-      const updated = blocking ? await usersApi.blockUser(id) : await usersApi.unblockUser(id);
-      toast.success(blocking ? "המשתמש נחסם." : "המשתמש הופעל מחדש.");
-      setUser((u) => ({ ...u, isBlocked: updated?.isBlocked ?? blocking }));
-    } catch (err) {
-      toast.error(extractErrorMessage(err, blocking ? "חסימת המשתמש נכשלה." : "הפעלת המשתמש נכשלה."));
-    } finally {
-      setTogglingBlock(false);
-    }
-  };
+                <Link
+                    className="btn btn-secondary btn-sm"
+                    to="/admin/users"
+                >
+                    חזרה לרשימה
+                </Link>
+            </div>
 
-  if (loading) return <Spinner />;
-  if (error || !user) return <EmptyState title="המשתמש לא נמצא" description={error} />;
+            <div className="panel-body stack-8">
+                <div className="confirm-row">
+                    <span>שם</span>
+                    <span>{user.userName}</span>
+                </div>
 
-  return (
-    <div className="panel">
-      <div className="panel-header">
-        <h2>משתמש #{user.id || id}</h2>
-        <Link className="btn btn-secondary btn-sm" to="/admin/users">
-          חזרה לרשימה
-        </Link>
-      </div>
-      <div className="panel-body stack-8">
-        <div className="confirm-row">
-          <span>שם</span>
-          <span>{user.userName}</span>
+                <div className="confirm-row">
+                    <span>טלפון</span>
+                    <span>{user.phone}</span>
+                </div>
+
+                <div className="confirm-row">
+                    <span>אימייל</span>
+                    <span>{user.email}</span>
+                </div>
+
+                {user.role && (
+                    <div className="confirm-row">
+                        <span>תפקיד</span>
+                        <span className="badge badge-primary">
+                            {roleLabel(user.role)}
+                        </span>
+                    </div>
+                )}
+
+                <div className="confirm-row">
+                    <span>סטטוס</span>
+
+                    <span
+                        className={`badge ${user.isBlocked
+                                ? "badge-danger"
+                                : "badge-success"
+                            }`}
+                    >
+                        {user.isBlocked ? "חסום" : "פעיל"}
+                    </span>
+                </div>
+
+                <div
+                    className="mt-24"
+                    style={{
+                        display: "flex",
+                        gap: 12,
+                        flexWrap: "wrap",
+                    }}
+                >
+                    {/* מוצג רק אם המשתמש עדיין אינו מנהל */}
+                    {user.role !== "Manager" && (
+                        <button
+                            className="btn btn-primary"
+                            onClick={handlePromote}
+                            disabled={promoting}
+                        >
+                            {promoting
+                                ? "מקדם..."
+                                : "קידום לתפקיד מנהל"}
+                        </button>
+                    )}
+
+                    {/* רק מנהל מקורי יכול להחזיר מנהל למשתמש רגיל */}
+                    {isOriginalAdmin &&
+                        user.role === "Manager" &&
+                        Number(id) !== userId && (
+                            <button
+                                className="btn btn-danger"
+                                onClick={handleDemote}
+                                disabled={demoting}
+                            >
+                                {demoting
+                                    ? "מבצע..."
+                                    : "החזרה למשתמש רגיל"}
+                            </button>
+                        )}
+
+                    {/* חסימה/הפעלה */}
+                    {Number(id) !== userId &&
+                        (user.role !== "Manager" ||
+                            isOriginalAdmin) && (
+                            <button
+                                className={`btn ${user.isBlocked
+                                        ? "btn-secondary"
+                                        : "btn-danger"
+                                    }`}
+                                onClick={handleToggleBlock}
+                                disabled={togglingBlock}
+                            >
+                                {togglingBlock
+                                    ? "מבצע..."
+                                    : user.isBlocked
+                                        ? "הפעלה מחדש"
+                                        : "חסימת משתמש"}
+                            </button>
+                        )}
+                </div>
+            </div>
         </div>
-        <div className="confirm-row">
-          <span>טלפון</span>
-          <span>{user.phone}</span>
-        </div>
-        <div className="confirm-row">
-          <span>אימייל</span>
-          <span>{user.email}</span>
-        </div>
-        {user.role && (
-          <div className="confirm-row">
-            <span>תפקיד</span>
-            <span className="badge badge-primary">{roleLabel(user.role)}</span>
-          </div>
-        )}
-
-        <div className="confirm-row">
-          <span>סטטוס</span>
-          <span className={`badge ${user.isBlocked ? "badge-danger" : "badge-success"}`}>
-            {user.isBlocked ? "חסום" : "פעיל"}
-          </span>
-        </div>
-
-        <div className="mt-24" style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-          <button className="btn btn-primary" onClick={handlePromote} disabled={promoting}>
-            {promoting ? "מקדם..." : "קידום לתפקיד מנהל"}
-          </button>
-          {isOriginalAdmin && user.role === "Manager" && Number(id) !== userId && (
-            <button className="btn btn-danger" onClick={handleDemote} disabled={demoting}>
-              {demoting ? "מבצע..." : "החזרה למשתמש רגיל"}
-            </button>
-          )}
-          {Number(id) !== userId && (user.role !== "Manager" || isOriginalAdmin) && (
-            <button
-              className={`btn ${user.isBlocked ? "btn-secondary" : "btn-danger"}`}
-              onClick={handleToggleBlock}
-              disabled={togglingBlock}
-            >
-              {togglingBlock ? "מבצע..." : user.isBlocked ? "הפעלה מחדש" : "חסימת משתמש"}
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
-  );
+    );
 }
