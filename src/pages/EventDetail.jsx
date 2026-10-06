@@ -1,3 +1,4 @@
+```jsx
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import * as eventsApi from "../api/events";
@@ -23,6 +24,7 @@ export default function EventDetail() {
     const [selectedSeat, setSelectedSeat] = useState(null);
     const [booking, setBooking] = useState(false);
     const [bookingError, setBookingError] = useState("");
+    const [rowFilter, setRowFilter] = useState("");
 
     const load = () => {
         let cancelled = false;
@@ -154,7 +156,6 @@ export default function EventDetail() {
     const totalSeats = event.numberOfSeats ?? seats.length;
 
     // מספר הכרטיסים שכבר נקנו
-    // מושב שאינו זמין = כבר הוזמן
     const soldTickets = seats.filter(
         (seat) => !seat.isAvailable
     ).length;
@@ -164,6 +165,18 @@ export default function EventDetail() {
         totalSeats - soldTickets,
         0
     );
+
+    // סינון לפי שורה - רק מושבים פנויים
+    const filteredSeats = seats.filter((seat) => {
+        if (!seat.isAvailable) return false;
+
+        if (!rowFilter.trim()) return true;
+
+        return (
+            String(seat.row).trim() ===
+            rowFilter.trim()
+        );
+    });
 
     return (
         <div className="page">
@@ -179,7 +192,6 @@ export default function EventDetail() {
                         {formatPrice(event.price)} לכרטיס
                     </p>
 
-                    {/* כמות הכרטיסים שנקנו */}
                     <p>
                         <strong>{soldTickets}</strong>{" "}
                         כרטיסים נקנו מתוך{" "}
@@ -222,33 +234,62 @@ export default function EventDetail() {
                         />
                     ) : (
                         <>
-                            <div className="seat-grid">
-                                {seats.map((seat) => (
-                                    <button
-                                        key={seat.seatId}
-                                        className={`seat-tile${selectedSeat?.seatId === seat.seatId
-                                                ? " selected"
-                                                : ""
-                                            }`}
-                                        onClick={() => handleSelectSeat(seat)}
-                                        type="button"
-                                        disabled={
-                                            !seat.isAvailable ||
-                                            event.isCancelled
-                                        }
-                                    >
-                                        <div className="seat-tile-label">
-                                            {seat.row}-{seat.line}
-                                        </div>
+                            <div className="stack-16 mb-24">
+                                <label htmlFor="row-filter">
+                                    <strong>סינון לפי שורה</strong>
+                                </label>
 
-                                        <div className="seat-tile-sub">
-                                            {seat.isAvailable
-                                                ? "שורה · טור"
-                                                : "תפוס"}
-                                        </div>
-                                    </button>
-                                ))}
+                                <input
+                                    id="row-filter"
+                                    type="text"
+                                    inputMode="numeric"
+                                    value={rowFilter}
+                                    onChange={(e) => {
+                                        setRowFilter(e.target.value);
+                                        setSelectedSeat(null);
+                                        setBookingError("");
+                                    }}
+                                    placeholder="הכניסו מספר שורה, למשל 5"
+                                    className="input"
+                                />
                             </div>
+
+                            {filteredSeats.length === 0 ? (
+                                <EmptyState
+                                    title="אין מושבים פנויים בשורה הזו"
+                                    description="נסו מספר שורה אחר או השאירו את השדה ריק."
+                                />
+                            ) : (
+                                <div className="seat-grid">
+                                    {filteredSeats.map((seat) => (
+                                        <button
+                                            key={seat.seatId}
+                                            className={`seat - tile${
+    selectedSeat?.seatId ===
+        seat.seatId
+        ? " selected"
+        : ""
+} `}
+                                            onClick={() =>
+                                                handleSelectSeat(seat)
+                                            }
+                                            type="button"
+                                            disabled={
+                                                !seat.isAvailable ||
+                                                event.isCancelled
+                                            }
+                                        >
+                                            <div className="seat-tile-label">
+                                                {seat.row}-{seat.line}
+                                            </div>
+
+                                            <div className="seat-tile-sub">
+                                                שורה · טור
+                                            </div>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
 
                             {selectedSeat && !event.isCancelled && (
                                 <div className="stack-16 mt-24">
@@ -266,7 +307,7 @@ export default function EventDetail() {
                                         >
                                             {booking
                                                 ? "מבצע הזמנה..."
-                                                : `הזמנת מושב ${selectedSeat.row}-${selectedSeat.line}`}
+                                                : `הזמנת מושב ${ selectedSeat.row } -${ selectedSeat.line } `}
                                         </button>
                                     </div>
                                 </div>
@@ -278,3 +319,4 @@ export default function EventDetail() {
         </div>
     );
 }
+```
