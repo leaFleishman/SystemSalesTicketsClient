@@ -29,106 +29,32 @@ export default function App() {
       <SessionExpiryModal />
 
       <Routes>
-        <Route
-          path="/login"
-          element={<Login />}
-        />
-
-        <Route
-          path="/register"
-          element={<Register />}
-        />
-
-        <Route
-          path="/unauthorized"
-          element={<Unauthorized />}
-        />
-
-        <Route
-          path="/"
-          element={<Home />}
-        />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/unauthorized" element={<Unauthorized />} />
+        <Route path="/" element={<Home />} />
 
         <Route element={<ProtectedRoute />}>
-          <Route
-            path="/events/:name"
-            element={<EventDetail />}
-          />
+          <Route path="/events/:name" element={<EventDetail />} />
+          <Route path="/order-confirmation" element={<OrderConfirmation />} />
+          <Route path="/my-orders" element={<MyOrders />} />
 
-          <Route
-            path="/order-confirmation"
-            element={<OrderConfirmation />}
-          />
+          <Route element={<RoleRoute roles={["Manager"]} />}>
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<AdminDashboard />} />
 
-          <Route
-            path="/my-orders"
-            element={<MyOrders />}
-          />
-
-          <Route
-            element={<RoleRoute roles={["Manager"]} />}
-          >
-            <Route
-              path="/admin"
-              element={<AdminLayout />}
-            >
-              <Route
-                index
-                element={
-                  <Navigate
-                    to="dashboard"
-                    replace
-                  />
-                }
-              />
-
-              <Route
-                path="dashboard"
-                element={<AdminDashboard />}
-              />
-
-              <Route
-                path="events"
-                element={<AdminEvents />}
-              />
-
-              <Route
-                path="seats"
-                element={<AdminSeats />}
-              />
-
-              <Route
-                path="event-seats"
-                element={<AdminEventSeats />}
-              />
-
-              <Route
-                path="orders"
-                element={<AdminOrders />}
-              />
-
-              <Route
-                path="orders/:id"
-                element={<AdminOrderDetail />}
-              />
-
-              <Route
-                path="users"
-                element={<AdminUsers />}
-              />
-
-              <Route
-                path="users/:id"
-                element={<AdminUserDetail />}
-              />
+              <Route path="events" element={<AdminEvents />} />
+              <Route path="seats" element={<AdminSeats />} />
+              <Route path="event-seats" element={<AdminEventSeats />} />
+              <Route path="orders" element={<AdminOrders />} />
+              <Route path="orders/:id" element={<AdminOrderDetail />} />
+              <Route path="users" element={<AdminUsers />} />
+              <Route path="users/:id" element={<AdminUserDetail />} />
             </Route>
           </Route>
         </Route>
 
-        <Route
-          path="*"
-          element={<NotFound />}
-        />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </div>
   );

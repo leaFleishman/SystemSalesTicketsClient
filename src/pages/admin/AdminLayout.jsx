@@ -1,6 +1,7 @@
 import { NavLink, Outlet } from "react-router-dom";
 
 const tabs = [
+  { to: "/admin", label: "Dashboard", end: true },
   { to: "/admin/events", label: "אירועים" },
   { to: "/admin/seats", label: "מושבים" },
   { to: "/admin/event-seats", label: "שיוך מושבים" },
@@ -21,7 +22,14 @@ export default function AdminLayout() {
 
       <div className="tabs">
         {tabs.map((tab) => (
-          <NavLink key={tab.to} to={tab.to} className={({ isActive }) => `tab${isActive ? " active" : ""}`}>
+          <NavLink
+            key={tab.to}
+            to={tab.to}
+            end={tab.end}
+            className={({ isActive }) =>
+              `tab${isActive ? " active" : ""}`
+            }
+          >
             {tab.label}
           </NavLink>
         ))}
