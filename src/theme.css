@@ -46,7 +46,6 @@ h1,h2,h3{letter-spacing:-.01em}
 .panel{box-shadow:var(--shadow-sm);overflow:hidden}
 .panel-header{background:linear-gradient(180deg,#fcfbf7,#f8f6ef);padding:18px 24px}
 .panel-header h2{display:flex;align-items:center;gap:10px}
-.panel-header h2::before{content:"";width:6px;height:20px;border-radius:3px;background:linear-gradient(180deg,var(--primary),var(--accent))}
 
 /* ---- Event cards (ticket stubs) ---- */
 .ticket-grid{gap:24px;grid-template-columns:repeat(auto-fill,minmax(330px,1fr))}
@@ -131,8 +130,7 @@ tbody td:first-child{font-weight:600;color:var(--ink)}
 .auth-wrap{background:radial-gradient(640px 360px at 85% 0%,rgba(31,111,92,.14),transparent 70%),radial-gradient(520px 320px at 5% 100%,rgba(217,142,63,.16),transparent 70%)}
 .auth-header::before{content:"";display:block;width:54px;height:54px;margin:0 auto 18px;border-radius:16px;background:linear-gradient(135deg,var(--primary),var(--primary-dark));box-shadow:0 14px 24px -12px rgba(31,111,92,.8)}
 .auth-header h1{font-size:1.8rem;font-weight:800}
-.form-card{position:relative;overflow:hidden;box-shadow:var(--shadow-lg)}
-.form-card::before{content:"";position:absolute;inset-inline:0;top:0;height:5px;background:linear-gradient(90deg,var(--primary),var(--accent))}
+.form-card{box-shadow:var(--shadow-lg)}
 
 /* ---- Confirmation ticket ---- */
 .confirm-ticket-top{position:relative;background:radial-gradient(300px 160px at 100% 0%,rgba(217,142,63,.4),transparent 70%),linear-gradient(135deg,var(--primary),var(--primary-dark))}
