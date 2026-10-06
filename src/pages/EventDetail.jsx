@@ -236,51 +236,74 @@ export default function EventDetail() {
                             <div
                                 style={{
                                     display: "flex",
-                                    alignItems: "flex-end",
-                                    gap: "12px",
+                                    alignItems: "center",
+                                    gap: "10px",
                                     marginBottom: "24px",
-                                    flexWrap: "wrap",
+                                    direction: "rtl",
                                 }}
                             >
-                                <div
+                                <label
+                                    htmlFor="row-filter"
                                     style={{
-                                        display: "flex",
-                                        flexDirection: "column",
-                                        gap: "6px",
-                                        width: "180px",
+                                        fontSize: "14px",
+                                        color: "#6b7280",
+                                        whiteSpace: "nowrap",
                                     }}
                                 >
-                                    <label
-                                        htmlFor="row-filter"
-                                        style={{
-                                            fontWeight: 600,
-                                        }}
-                                    >
-                                        סינון לפי שורה
-                                    </label>
+                                    שורה:
+                                </label>
 
-                                    <input
-                                        id="row-filter"
-                                        type="text"
-                                        inputMode="numeric"
-                                        value={rowFilter}
-                                        onChange={(e) => {
-                                            setRowFilter(e.target.value);
-                                            setSelectedSeat(null);
-                                            setBookingError("");
-                                        }}
-                                        placeholder="מספר שורה"
-                                        className="input"
-                                    />
-                                </div>
+                                <input
+                                    id="row-filter"
+                                    type="text"
+                                    inputMode="numeric"
+                                    value={rowFilter}
+                                    onChange={(e) => {
+                                        setRowFilter(e.target.value);
+                                        setSelectedSeat(null);
+                                        setBookingError("");
+                                    }}
+                                    placeholder="כל השורות"
+                                    style={{
+                                        width: "110px",
+                                        height: "36px",
+                                        padding: "0 12px",
+                                        border: "1px solid #e5e7eb",
+                                        borderRadius: "8px",
+                                        background: "#fafafa",
+                                        color: "#374151",
+                                        fontSize: "14px",
+                                        outline: "none",
+                                        transition:
+                                            "border-color 0.2s, box-shadow 0.2s",
+                                    }}
+                                    onFocus={(e) => {
+                                        e.target.style.borderColor =
+                                            "#cbd5e1";
+                                        e.target.style.boxShadow =
+                                            "0 0 0 3px rgba(148, 163, 184, 0.12)";
+                                    }}
+                                    onBlur={(e) => {
+                                        e.target.style.borderColor =
+                                            "#e5e7eb";
+                                        e.target.style.boxShadow = "none";
+                                    }}
+                                />
 
                                 {rowFilter && (
                                     <button
                                         type="button"
-                                        className="btn btn-secondary"
                                         onClick={clearRowFilter}
+                                        style={{
+                                            border: "none",
+                                            background: "transparent",
+                                            color: "#9ca3af",
+                                            fontSize: "13px",
+                                            cursor: "pointer",
+                                            padding: "4px 6px",
+                                        }}
                                     >
-                                        נקה סינון
+                                        נקה
                                     </button>
                                 )}
                             </div>
@@ -290,7 +313,7 @@ export default function EventDetail() {
                                     style={{
                                         marginBottom: "16px",
                                         fontSize: "14px",
-                                        opacity: 0.75,
+                                        color: "#6b7280",
                                     }}
                                 >
                                     מציג מושבים פנויים בשורה{" "}
@@ -310,12 +333,11 @@ export default function EventDetail() {
                                     {filteredSeats.map((seat) => (
                                         <button
                                             key={seat.seatId}
-                                            className={`seat-tile${
-                                                selectedSeat?.seatId ===
-                                                seat.seatId
+                                            className={`seat-tile${selectedSeat?.seatId ===
+                                                    seat.seatId
                                                     ? " selected"
                                                     : ""
-                                            }`}
+                                                }`}
                                             onClick={() =>
                                                 handleSelectSeat(seat)
                                             }
