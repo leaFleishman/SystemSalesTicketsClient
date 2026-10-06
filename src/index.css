@@ -1072,7 +1072,7 @@ tbody tr:hover {
   mask-repeat: no-repeat;
   -webkit-mask-position: 0% 0;
   mask-position: 0% 0;
-  animation: lp-draw-reveal 2.4s 0.5s cubic-bezier(0.37, 0, 0.63, 1) forwards;
+  animation: lp-draw-reveal 2.4s 0s cubic-bezier(0.37, 0, 0.63, 1) forwards;
 }
 
 .lp-draw-line path {
