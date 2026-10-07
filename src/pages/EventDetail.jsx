@@ -1,523 +1,558 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import * as eventsApi from "../api/events";
-import * as eventSeatsApi from "../api/eventSeats";
-import * as ordersApi from "../api/orders";
-import { extractErrorMessage } from "../api/client";
-import Spinner from "../components/Spinner";
-import EmptyState from "../components/EmptyState";
-import { formatDate, formatPrice } from "../utils/format";
+import eventsApi from "../api/eventsApi";
+import eventSeatsApi from "../api/eventSeatsApi";
+import ordersApi from "../api/ordersApi";
 import { useAuth } from "../context/AuthContext";
-import { useToast } from "../context/ToastContext";
+import { toast } from "react-toastify";
+import "./EventDetail.css";
 
-export default function EventDetail() {
-    const { name } = useParams();
+function EventDetail() {
+    const { eventName } = useParams();
     const navigate = useNavigate();
-    const { userId } = useAuth();
-    const toast = useToast();
+    const { user } = useAuth();
 
     const [event, setEvent] = useState(null);
     const [seats, setSeats] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+
     const [selectedSeat, setSelectedSeat] = useState(null);
     const [booking, setBooking] = useState(false);
     const [bookingError, setBookingError] = useState("");
     const [rowFilter, setRowFilter] = useState("");
 
-    const load = () => {
-        let cancelled = false;
+    useEffect(() => {
+        load();
+    }, [eventName]);
 
-        setLoading(true);
-        setError("");
+    const load = async () => {
+        try {
+            setLoading(true);
+            setError("");
 
-        eventsApi
-            .getEventByName(name)
-            .then((eventData) => {
-                if (cancelled) return;
+            const eventResponse = await eventsApi.getByName(eventName);
+            const eventData = eventResponse.data ?? eventResponse;
 
-                setEvent(eventData);
-                return eventSeatsApi.getSeatsForEvent(eventData.id);
-            })
-            .then((eventSeats) => {
-                if (cancelled) return;
+            setEvent(eventData);
 
-                setSeats(eventSeats || []);
-            })
-            .catch((err) => {
-                if (!cancelled) {
-                    setError(
-                        extractErrorMessage(
-                            err,
-                            "לא ניתן לטעון את פרטי האירוע."
-                        )
-                    );
-                }
-            })
-            .finally(() => {
-                if (!cancelled) {
-                    setLoading(false);
-                }
-            });
+            const eventId = eventData.eventId ?? eventData.EventId;
 
-        return () => {
-            cancelled = true;
-        };
+            const seatsResponse = await eventSeatsApi.getByEvent(eventId);
+            const seatsData = seatsResponse.data ?? seatsResponse;
+
+            setSeats(Array.isArray(seatsData) ? seatsData : []);
+        } catch (err) {
+            console.error(err);
+            setError("לא ניתן לטעון את פרטי האירוע");
+        } finally {
+            setLoading(false);
+        }
     };
 
-    useEffect(load, [name]); // eslint-disable-line react-hooks/exhaustive-deps
+    const getSeatId = (seat) =>
+        seat.seatId ?? seat.SeatId;
 
-    const handleSelectSeat = (seat) => {
-        if (!seat.isAvailable || event?.isCancelled) return;
+    const getRow = (seat) =>
+        seat.row ?? seat.Row;
+
+    const getLine = (seat) =>
+        seat.line ?? seat.Line;
+
+    const isAvailable = (seat) =>
+        seat.isAvailable ?? seat.IsAvailable ?? false;
+
+    const handleSeatClick = (seat) => {
+        if (!isAvailable(seat)) {
+            return;
+        }
+
+        setBookingError("");
+
+        if (
+            selectedSeat &&
+            getSeatId(selectedSeat) === getSeatId(seat)
+        ) {
+            setSelectedSeat(null);
+            return;
+        }
 
         setSelectedSeat(seat);
-        setBookingError("");
     };
 
-    const handleBook = async () => {
-        if (event?.isCancelled) {
-            setBookingError(
-                "האירוע בוטל ולא ניתן להזמין אליו כרטיסים."
-            );
+    const handleBooking = async () => {
+        if (!selectedSeat || !event) {
             return;
         }
 
-        if (!selectedSeat) {
-            setBookingError("בחרו מושב תחילה.");
+        if (!user) {
+            navigate("/login", {
+                state: {
+                    from: `/events/${eventName}`,
+                },
+            });
             return;
         }
-
-        setBooking(true);
-        setBookingError("");
 
         try {
-            const result = await ordersApi.createOrder({
-                eventId: selectedSeat.eventId,
-                seatId: selectedSeat.seatId,
-                userId,
+            setBooking(true);
+            setBookingError("");
+
+            const eventId =
+                event.eventId ?? event.EventId;
+
+            const seatId = getSeatId(selectedSeat);
+
+            const response = await ordersApi.create({
+                eventId,
+                seatId,
             });
 
-            toast.success("ההזמנה בוצעה בהצלחה!");
+            const order = response.data ?? response;
 
             navigate("/order-confirmation", {
                 state: {
-                    order: result,
-                    eventName: event.name,
+                    order,
+                    event,
+                    seat: selectedSeat,
                 },
             });
         } catch (err) {
-            const status = err?.response?.status;
+            console.error(err);
 
-            if (status === 409) {
+            if (err.response?.status === 409) {
                 setBookingError(
-                    extractErrorMessage(
-                        err,
-                        "המושב הזה כבר תפוס. נסו מושב אחר."
-                    )
+                    "המושב נתפס על ידי משתמש אחר. המושבים עודכנו."
                 );
 
-                load();
-            } else if (status === 404) {
-                setBookingError(
-                    extractErrorMessage(
-                        err,
-                        "המושב לא נמצא. רעננו את הדף ונסו שוב."
-                    )
+                toast.warning(
+                    "המושב כבר הוזמן על ידי משתמש אחר"
                 );
+
+                await load();
+                setSelectedSeat(null);
             } else {
-                setBookingError(extractErrorMessage(err));
+                setBookingError(
+                    err.response?.data?.message ||
+                    "אירעה שגיאה בעת הזמנת המושב"
+                );
             }
         } finally {
             setBooking(false);
         }
     };
 
-    const clearRowFilter = () => {
-        setRowFilter("");
-        setSelectedSeat(null);
-        setBookingError("");
-    };
-
     if (loading) {
         return (
-            <div className="page">
-                <Spinner />
-            </div>
+            <main className="page">
+                <div className="state-card">
+                    <div className="spinner" />
+                    <p>טוען את פרטי האירוע...</p>
+                </div>
+            </main>
         );
     }
 
     if (error || !event) {
         return (
-            <div className="page">
-                <EmptyState
-                    title="האירוע לא נמצא"
-                    description={error || "ייתכן שהאירוע הוסר."}
-                />
-            </div>
+            <main className="page">
+                <div className="state-card error-state">
+                    <h2>לא ניתן להציג את האירוע</h2>
+                    <p>{error || "האירוע לא נמצא"}</p>
+                </div>
+            </main>
         );
     }
 
-    const totalSeats = event.numberOfSeats ?? seats.length;
+    const totalSeats = seats.length;
 
-    const soldTickets = seats.filter(
-        (seat) => !seat.isAvailable
-    ).length;
+    const availableTickets =
+        seats.filter(isAvailable).length;
 
-    const availableTickets = Math.max(
-        totalSeats - soldTickets,
-        0
-    );
+    const soldTickets =
+        totalSeats - availableTickets;
 
-    const filteredSeats = seats.filter((seat) => {
-        if (!rowFilter.trim()) return true;
-
-        return (
-            String(seat.row).trim() ===
-            rowFilter.trim()
-        );
-    });
-
-    const rows = Object.entries(
-        filteredSeats.reduce((acc, seat) => {
-            (acc[seat.row] = acc[seat.row] || []).push(seat);
-            return acc;
-        }, {})
-    )
-        .sort((a, b) => Number(a[0]) - Number(b[0]))
-        .map(([row, list]) => [
-            row,
-            list.sort(
-                (a, b) =>
-                    Number(a.line) - Number(b.line)
-            ),
-        ]);
-
-    const soldPct = totalSeats
-        ? Math.min(
-            100,
-            Math.round(
-                (soldTickets / totalSeats) * 100
-            )
+    const rows = [...new Set(seats.map(getRow))]
+        .filter(
+            (row) =>
+                row !== undefined &&
+                row !== null
         )
-        : 0;
+        .sort(
+            (a, b) =>
+                Number(a) - Number(b)
+        );
+
+    /*
+     * מספר המושבים בכל "גובה" במפה.
+     *
+     * כל המספרים זוגיים ולכן:
+     * - אין מושב בודד באמצע.
+     * - צד שמאל וצד ימין תמיד זהים.
+     * - הסכום הוא בדיוק 170.
+     */
+    const visualRowSizes = [
+        6,
+        10,
+        12,
+        14,
+        16,
+        18,
+        20,
+        22,
+        24,
+        28,
+    ];
+
+    /*
+     * יצירת מיקומים בצורת חצי עיגול.
+     *
+     * אין כאן קשת לכל שורה.
+     * כל המושבים הם חלק ממפה אחת רציפה.
+     */
+    const createSeatPositions = (seatList) => {
+        const positions = [];
+
+        const mapWidth = 900;
+        const mapHeight = 470;
+
+        const centerX = mapWidth / 2;
+
+        const rowHeight = 39;
+
+        visualRowSizes.forEach(
+            (count, rowIndex) => {
+                const y =
+                    20 +
+                    rowIndex * rowHeight;
+
+                const totalWidth =
+                    count * 29;
+
+                const startX =
+                    centerX -
+                    totalWidth / 2 +
+                    14.5;
+
+                for (
+                    let i = 0;
+                    i < count;
+                    i++
+                ) {
+                    const x =
+                        startX +
+                        i * 29;
+
+                    positions.push({
+                        x,
+                        y,
+                    });
+                }
+            }
+        );
+
+        /*
+         * אם קיימים בדיוק 170 מושבים,
+         * כל מושב מקבל מיקום אחד.
+         *
+         * אם כמות המושבים שונה,
+         * אנחנו עדיין מציגים את כולם
+         * במיקומים הראשונים.
+         */
+        return seatList.map(
+            (seat, index) => ({
+                seat,
+                x:
+                    positions[index]?.x ??
+                    centerX,
+                y:
+                    positions[index]?.y ??
+                    mapHeight - 20,
+            })
+        );
+    };
+
+    const filteredSeats = rowFilter
+        ? seats.filter(
+            (seat) =>
+                String(getRow(seat)) ===
+                String(rowFilter)
+        )
+        : seats;
+
+    const positionedSeats =
+        createSeatPositions(filteredSeats);
 
     return (
-        <div className="page">
-            <div className="event-hero">
+        <main className="page event-detail-page">
+            <div className="page-header">
                 <div>
-                    <h1>{event.name}</h1>
+                    <span className="eyebrow">
+                        EVENT
+                    </span>
 
-                    <div className="chips">
-                        <span className="chip">
-                            {formatDate(event.date)}
-                        </span>
-
-                        <span className="chip">
-                            {formatPrice(event.price)} לכרטיס
-                        </span>
-
-                        <span className="chip">
-                            {totalSeats} מקומות
-                        </span>
-                    </div>
-                </div>
-
-                <div className="event-hero-stats">
-                    <strong>{availableTickets}</strong>
-
-                    <small>מושבים פנויים</small>
-
-                    <div className="meter">
-                        <i
-                            style={{
-                                width: `${soldPct}%`,
-                            }}
-                        />
-                    </div>
-
-                    <small>
-                        {soldTickets} כרטיסים נקנו מתוך{" "}
-                        {totalSeats}
-                    </small>
+                    <h1>
+                        {event.name ?? event.Name}
+                    </h1>
                 </div>
             </div>
 
-            {event.isCancelled && (
-                <div className="alert alert-danger">
-                    <strong>האירוע בוטל.</strong>
+            <section className="event-detail-layout">
+                <div className="event-info-panel">
+                    <div className="event-info">
+                        <h2>
+                            {event.name ?? event.Name}
+                        </h2>
 
-                    {event.cancellationReason && (
-                        <> {event.cancellationReason}</>
-                    )}
+                        <div className="event-info-row">
+                            <span>תאריך</span>
 
-                    <div>
-                        לא ניתן להזמין כרטיסים לאירוע זה.
+                            <strong>
+                                {new Date(
+                                    event.date ??
+                                    event.Date
+                                ).toLocaleDateString(
+                                    "he-IL"
+                                )}
+                            </strong>
+                        </div>
+
+                        <div className="event-info-row">
+                            <span>מחיר כרטיס</span>
+
+                            <strong>
+                                ₪
+                                {event.price ??
+                                    event.Price}
+                            </strong>
+                        </div>
+
+                        <div className="event-info-row">
+                            <span>מקומות</span>
+
+                            <strong>
+                                {totalSeats}
+                            </strong>
+                        </div>
+
+                        <div className="event-info-row">
+                            <span>נמכרו</span>
+
+                            <strong>
+                                {soldTickets}
+                            </strong>
+                        </div>
+
+                        <div className="event-info-row">
+                            <span>נותרו</span>
+
+                            <strong className="available-number">
+                                {availableTickets}
+                            </strong>
+                        </div>
+                    </div>
+
+                    <div className="seat-legend">
+                        <div>
+                            <span className="legend-seat available" />
+                            <span>פנוי</span>
+                        </div>
+
+                        <div>
+                            <span className="legend-seat selected" />
+                            <span>נבחר</span>
+                        </div>
+
+                        <div>
+                            <span className="legend-seat taken" />
+                            <span>תפוס</span>
+                        </div>
                     </div>
                 </div>
-            )}
 
-            <div className="panel">
-                <div className="panel-header">
-                    <h2>בחירת מושב</h2>
+                <div className="seat-panel">
+                    <div className="seat-panel-header">
+                        <div>
+                            <span className="eyebrow">
+                                SEAT MAP
+                            </span>
 
-                    <span className="badge badge-neutral">
-                        {availableTickets} מושבים פנויים
-                    </span>
-                </div>
+                            <h2>
+                                בחירת מושב
+                            </h2>
+                        </div>
 
-                <div className="panel-body">
-                    {seats.length === 0 ? (
-                        <EmptyState
-                            title="אין עדיין מושבים משויכים לאירוע"
-                            description="פנו למנהל המערכת כדי לשייך מושבים לאירוע לפני שניתן להזמין כרטיסים."
-                        />
-                    ) : (
-                        <>
-                            <div className="seat-tools">
-                                <div className="field">
-                                    <label htmlFor="row-filter">
-                                        שורה
-                                    </label>
+                        <select
+                            value={rowFilter}
+                            onChange={(e) =>
+                                setRowFilter(
+                                    e.target.value
+                                )
+                            }
+                            className="row-filter"
+                        >
+                            <option value="">
+                                כל השורות
+                            </option>
 
-                                    <input
-                                        id="row-filter"
-                                        type="text"
-                                        inputMode="numeric"
-                                        value={rowFilter}
-                                        onChange={(e) => {
-                                            setRowFilter(
-                                                e.target.value
-                                            );
-                                            setSelectedSeat(null);
-                                            setBookingError("");
-                                        }}
-                                        placeholder="כל השורות"
-                                    />
-                                </div>
-
-                                {rowFilter && (
-                                    <button
-                                        type="button"
-                                        className="btn btn-ghost btn-sm"
-                                        onClick={clearRowFilter}
-                                    >
-                                        ניקוי
-                                    </button>
-                                )}
-
-                                <div
-                                    className="legend"
-                                    aria-hidden="true"
+                            {rows.map((row) => (
+                                <option
+                                    key={row}
+                                    value={row}
                                 >
-                                    <span>
-                                        <i /> פנוי
-                                    </span>
+                                    שורה {row}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
 
-                                    <span>
-                                        <i className="taken" /> תפוס
-                                    </span>
+                    <div className="auditorium">
+                        <div className="stage">
+                            <span>STAGE</span>
+                        </div>
 
-                                    <span>
-                                        <i className="sel" /> נבחר
-                                    </span>
-                                </div>
+                        <div className="seat-map-wrapper">
+                            <div className="seat-map">
+                                {positionedSeats.map(
+                                    ({
+                                        seat,
+                                        x,
+                                        y,
+                                    }) => {
+                                        const seatId =
+                                            getSeatId(
+                                                seat
+                                            );
+
+                                        const available =
+                                            isAvailable(
+                                                seat
+                                            );
+
+                                        const selected =
+                                            selectedSeat &&
+                                            getSeatId(
+                                                selectedSeat
+                                            ) ===
+                                            seatId;
+
+                                        return (
+                                            <button
+                                                key={
+                                                    seatId
+                                                }
+                                                type="button"
+                                                className={[
+                                                    "seat",
+                                                    !available
+                                                        ? "taken"
+                                                        : "",
+                                                    selected
+                                                        ? "selected"
+                                                        : "",
+                                                ]
+                                                    .filter(
+                                                        Boolean
+                                                    )
+                                                    .join(
+                                                        " "
+                                                    )}
+                                                style={{
+                                                    left: `${x}px`,
+                                                    top: `${y}px`,
+                                                }}
+                                                disabled={
+                                                    !available
+                                                }
+                                                onClick={() =>
+                                                    handleSeatClick(
+                                                        seat
+                                                    )
+                                                }
+                                                title={
+                                                    available
+                                                        ? `שורה ${getRow(
+                                                            seat
+                                                        )}, מושב ${getLine(
+                                                            seat
+                                                        )}`
+                                                        : "מושב תפוס"
+                                                }
+                                                aria-label={`שורה ${getRow(
+                                                    seat
+                                                )}, מושב ${getLine(
+                                                    seat
+                                                )}`}
+                                            >
+                                                {getLine(
+                                                    seat
+                                                )}
+                                            </button>
+                                        );
+                                    }
+                                )}
                             </div>
+                        </div>
+                    </div>
 
-                            {filteredSeats.length === 0 ? (
-                                <EmptyState
-                                    title="לא נמצאו מושבים בשורה הזו"
-                                    description="נסו מספר שורה אחר או נקו את הסינון כדי לראות את כל המושבים."
-                                />
+                    {bookingError && (
+                        <div className="booking-error">
+                            {bookingError}
+                        </div>
+                    )}
+
+                    <div className="booking-bar">
+                        <div>
+                            {selectedSeat ? (
+                                <>
+                                    <span>
+                                        המושב שנבחר
+                                    </span>
+
+                                    <strong>
+                                        שורה{" "}
+                                        {getRow(
+                                            selectedSeat
+                                        )}{" "}
+                                        · מושב{" "}
+                                        {getLine(
+                                            selectedSeat
+                                        )}
+                                    </strong>
+                                </>
                             ) : (
                                 <>
-                                    <div className="stage">
-                                        במה
-                                    </div>
+                                    <span>
+                                        בחרי מושב מהמפה
+                                    </span>
 
-                                    <div className="seat-map">
-                                        {rows.map(
-                                            ([row, list]) => (
-                                                <div
-                                                    className="seat-row"
-                                                    key={row}
-                                                >
-                                                    <span className="seat-row-label">
-                                                        {row}
-                                                    </span>
-
-                                                    <div className="seat-row-seats">
-                                                        {list.map(
-                                                            (
-                                                                seat,
-                                                                index
-                                                            ) => {
-                                                                const isTaken =
-                                                                    !seat.isAvailable;
-
-                                                                const isSelected =
-                                                                    selectedSeat?.seatId ===
-                                                                    seat.seatId;
-
-                                                                const seatLabel = `שורה ${seat.row} טור ${seat.line}`;
-
-                                                                /*
-                                                                 * Position of the seat
-                                                                 * along the curved row.
-                                                                 *
-                                                                 * 17 seats are distributed
-                                                                 * symmetrically around the
-                                                                 * center of the row.
-                                                                 */
-                                                                const center =
-                                                                    (list.length -
-                                                                        1) /
-                                                                    2;
-
-                                                                const distance =
-                                                                    index -
-                                                                    center;
-
-                                                                const normalized =
-                                                                    center ===
-                                                                        0
-                                                                        ? 0
-                                                                        : distance /
-                                                                        center;
-
-                                                                const curve =
-                                                                    22 +
-                                                                    Math.abs(
-                                                                        normalized
-                                                                    ) *
-                                                                    55;
-
-                                                                const angle =
-                                                                    normalized *
-                                                                    13;
-
-                                                                const seatStyle =
-                                                                {
-                                                                    "--seat-y": `${curve}px`,
-                                                                    "--seat-angle": `${angle}deg`,
-                                                                };
-
-                                                                return (
-                                                                    <button
-                                                                        key={
-                                                                            seat.seatId
-                                                                        }
-                                                                        type="button"
-                                                                        className={`seat${isTaken
-                                                                                ? " taken"
-                                                                                : ""
-                                                                            }${isSelected
-                                                                                ? " selected"
-                                                                                : ""
-                                                                            }`}
-                                                                        style={
-                                                                            seatStyle
-                                                                        }
-                                                                        onClick={() =>
-                                                                            handleSelectSeat(
-                                                                                seat
-                                                                            )
-                                                                        }
-                                                                        disabled={
-                                                                            event.isCancelled ||
-                                                                            isTaken
-                                                                        }
-                                                                        title={
-                                                                            isTaken
-                                                                                ? `${seatLabel} · תפוס`
-                                                                                : seatLabel
-                                                                        }
-                                                                        aria-label={
-                                                                            isTaken
-                                                                                ? `${seatLabel}, תפוס`
-                                                                                : seatLabel
-                                                                        }
-                                                                        aria-pressed={
-                                                                            isSelected
-                                                                        }
-                                                                    >
-                                                                        {isTaken
-                                                                            ? "✕"
-                                                                            : seat.line}
-                                                                    </button>
-                                                                );
-                                                            }
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            )
-                                        )}
-                                    </div>
+                                    <strong>
+                                        לא נבחר מושב
+                                    </strong>
                                 </>
                             )}
+                        </div>
 
-                            {selectedSeat &&
-                                !event.isCancelled && (
-                                    <div className="book-bar">
-                                        <div>
-                                            <b>
-                                                שורה{" "}
-                                                {
-                                                    selectedSeat.row
-                                                }{" "}
-                                                · טור{" "}
-                                                {
-                                                    selectedSeat.line
-                                                }
-                                            </b>
-
-                                            <small>
-                                                {formatPrice(
-                                                    event.price
-                                                )}{" "}
-                                                לכרטיס
-                                            </small>
-                                        </div>
-
-                                        <div
-                                            className="stack-8"
-                                            style={{
-                                                alignItems:
-                                                    "flex-end",
-                                            }}
-                                        >
-                                            {bookingError && (
-                                                <div
-                                                    className="alert alert-danger"
-                                                    style={{
-                                                        margin: 0,
-                                                    }}
-                                                >
-                                                    {
-                                                        bookingError
-                                                    }
-                                                </div>
-                                            )}
-
-                                            <button
-                                                className="btn btn-primary"
-                                                onClick={
-                                                    handleBook
-                                                }
-                                                disabled={
-                                                    booking
-                                                }
-                                            >
-                                                {booking
-                                                    ? "מבצע הזמנה..."
-                                                    : "הזמנת המושב"}
-                                            </button>
-                                        </div>
-                                    </div>
-                                )}
-                        </>
-                    )}
+                        <button
+                            type="button"
+                            className="btn btn-primary"
+                            disabled={
+                                !selectedSeat ||
+                                booking
+                            }
+                            onClick={
+                                handleBooking
+                            }
+                        >
+                            {booking
+                                ? "מבצע הזמנה..."
+                                : "הזמן כרטיס"}
+                        </button>
+                    </div>
                 </div>
-            </div>
-        </div>
+            </section>
+        </main>
     );
 }
+
+export default EventDetail;
