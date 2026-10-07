@@ -11,7 +11,7 @@ import { toast } from "react-toastify";
 import "../theme.css";
 
 function EventDetail() {
-const { name: eventName } = useParams();
+const { name } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -242,73 +242,95 @@ const { name: eventName } = useParams();
     );
 
   /*
-   * מיקום ויזואלי של המושבים בלבד.
+   * מיקום ויזואלי של המושבים בלבד (חצי עיגול סביב הבמה).
+   * כל שורה היא קשת; הרדיוס גדל עם מספר השורה.
    * הלוגיקה של האירוע וה־API אינה תלויה בעיצוב.
    */
-  const visualRowSizes = [
-    6,
-    10,
-    12,
-    14,
-    16,
-    18,
-    20,
-    22,
-    24,
-    28,
-  ];
+  const createSeatLayout = (seatList) => {
+    const SEAT_GAP = 32; // מרחק בין מושבים לאורך הקשת
+    const ROW_GAP = 38; // מרחק בין שורות
+    const INNER_RADIUS = 120;
+    const MAX_SPAN = Math.PI * 0.78; // זווית פתיחה מקסימלית (~140°)
+    const SEAT_SIZE = 27;
+    const PADDING = 30;
 
-  const createSeatPositions = (
-    seatList
-  ) => {
-    const positions = [];
+    const byRow = new Map();
 
-    const mapWidth = 900;
-    const mapHeight = 470;
-    const centerX = mapWidth / 2;
-    const rowHeight = 39;
+    seatList.forEach((seat) => {
+      const key = String(getRow(seat));
+      if (!byRow.has(key)) byRow.set(key, []);
+      byRow.get(key).push(seat);
+    });
 
-    visualRowSizes.forEach(
-      (count, rowIndex) => {
-        const y =
-          20 +
-          rowIndex * rowHeight;
-
-        const totalWidth =
-          count * 29;
-
-        const startX =
-          centerX -
-          totalWidth / 2 +
-          14.5;
-
-        for (
-          let i = 0;
-          i < count;
-          i++
-        ) {
-          positions.push({
-            x:
-              startX +
-              i * 29,
-            y,
-          });
-        }
-      }
+    const rowKeys = [...byRow.keys()].sort(
+      (a, b) => Number(a) - Number(b)
     );
 
-    return seatList.map(
-      (seat, index) => ({
-        seat,
-        x:
-          positions[index]?.x ??
-          centerX,
-        y:
-          positions[index]?.y ??
-          mapHeight - 20,
-      })
+    const raw = [];
+    let prevRadius = INNER_RADIUS - ROW_GAP;
+
+    rowKeys.forEach((key) => {
+      const rowSeats = byRow
+        .get(key)
+        .slice()
+        .sort((a, b) => Number(getLine(a)) - Number(getLine(b)));
+
+      const n = rowSeats.length;
+
+      // הרדיוס מספיק גדול כדי שכל המושבים בשורה ייכנסו בלי חפיפה
+      const radius = Math.max(
+        prevRadius + ROW_GAP,
+        ((n - 1) * SEAT_GAP) / MAX_SPAN
+      );
+      prevRadius = radius;
+
+      const span =
+        n > 1
+          ? Math.min(MAX_SPAN, ((n - 1) * SEAT_GAP) / radius)
+          : 0;
+
+      rowSeats.forEach((seat, i) => {
+        const angle =
+          n > 1
+            ? Math.PI / 2 + span / 2 - (i * span) / (n - 1)
+            : Math.PI / 2;
+
+        raw.push({
+          seat,
+          x: radius * Math.cos(angle),
+          y: radius * Math.sin(angle),
+        });
+      });
+    });
+
+    if (raw.length === 0) {
+      return { positions: new Map(), width: 600, height: 200 };
+    }
+
+    const minX = Math.min(...raw.map((p) => p.x));
+    const maxX = Math.max(...raw.map((p) => p.x));
+    const minY = Math.min(...raw.map((p) => p.y));
+    const maxY = Math.max(...raw.map((p) => p.y));
+
+    const width = Math.max(
+      600,
+      maxX - minX + SEAT_SIZE + PADDING * 2
     );
+    const height = maxY - minY + SEAT_SIZE + PADDING;
+
+    const positions = new Map();
+
+    raw.forEach(({ seat, x, y }) => {
+      positions.set(getSeatId(seat), {
+        x: width / 2 + x,
+        y: y - minY + 4,
+      });
+    });
+
+    return { positions, width, height };
   };
+
+  const seatLayout = createSeatLayout(seats);
 
   const filteredSeats = rowFilter
     ? seats.filter(
@@ -320,10 +342,10 @@ const { name: eventName } = useParams();
       )
     : seats;
 
-  const positionedSeats =
-    createSeatPositions(
-      filteredSeats
-    );
+  const positionedSeats = filteredSeats.map((seat) => ({
+    seat,
+    ...(seatLayout.positions.get(getSeatId(seat)) ?? { x: 0, y: 0 }),
+  }));
 
   return (
     <main className="page event-detail-page">
@@ -466,7 +488,13 @@ const { name: eventName } = useParams();
             </div>
 
             <div className="seat-map-wrapper">
-              <div className="seat-map">
+              <div
+                className="seat-map"
+                style={{
+                  width: `${seatLayout.width}px`,
+                  height: `${seatLayout.height}px`,
+                }}
+              >
                 {positionedSeats.map(
                   ({
                     seat,

@@ -758,28 +758,29 @@ tbody td:first-child {
    ============================================================ */
 
 .stage {
-    margin: 0 auto 34px;
+    margin: 0 auto 28px;
 
-    max-width: 560px;
+    max-width: 420px;
 
     text-align: center;
 
-    padding: 10px 0 12px;
+    padding: 12px 0 10px;
 
     font-size: .82rem;
     font-weight: 600;
+    letter-spacing: .18em;
 
     color: var(--ink-soft);
 
     border-radius:
-        50% 50% 0 0 /
-        100% 100% 0 0;
+        0 0 50% 50% /
+        0 0 100% 100%;
 
-    border-top: 4px solid var(--accent);
+    border-bottom: 4px solid var(--accent);
 
     background:
         linear-gradient(
-            180deg,
+            0deg,
             var(--accent-soft),
             transparent
         );
@@ -803,8 +804,8 @@ tbody td:first-child {
 .seat-map {
     position: relative;
 
-    width: 900px;
-    height: 490px;
+    /* width / height are set inline by EventDetail.jsx */
+    min-width: 600px;
 
     margin: 0 auto;
 }
@@ -917,6 +918,198 @@ tbody td:first-child {
     color: #9a9684;
 
     font-size: .62rem;
+}
+
+/* ============================================================
+   Event detail page layout
+   (classes used by EventDetail.jsx)
+   ============================================================ */
+
+.event-detail-layout {
+    display: grid;
+    grid-template-columns: 280px minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+}
+
+.event-info-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+
+    position: sticky;
+    top: 88px;
+}
+
+.event-info,
+.seat-legend,
+.seat-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+}
+
+.event-info {
+    padding: 22px;
+}
+
+.event-info h2 {
+    font-size: 1.2rem;
+    margin-bottom: 14px;
+}
+
+.event-info-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+
+    padding: 11px 0;
+    border-bottom: 1px dashed #e3dfcf;
+
+    font-size: .92rem;
+}
+
+.event-info-row:last-child {
+    border-bottom: none;
+}
+
+.event-info-row span {
+    color: var(--ink-soft);
+}
+
+.available-number {
+    color: var(--primary);
+    font-size: 1.15rem;
+}
+
+.seat-legend {
+    display: flex;
+    justify-content: space-around;
+    gap: 12px;
+
+    padding: 14px 16px;
+    font-size: .82rem;
+    color: var(--ink-soft);
+}
+
+.seat-legend > div {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.legend-seat {
+    width: 16px;
+    height: 16px;
+
+    border-radius: 5px 5px 3px 3px;
+
+    background: var(--primary-soft);
+    border: 1.5px solid #b7d3c8;
+}
+
+.legend-seat.selected {
+    background: var(--primary);
+    border-color: var(--primary-dark);
+}
+
+.legend-seat.taken {
+    background: #e7e4da;
+    border-color: #cfcabb;
+}
+
+.seat-panel {
+    padding: 24px;
+    min-width: 0;
+}
+
+.seat-panel-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+
+    margin-bottom: 22px;
+}
+
+.seat-panel-header h2 {
+    font-size: 1.3rem;
+}
+
+.seat-panel-header .eyebrow {
+    margin-bottom: 8px;
+}
+
+.row-filter {
+    padding: 9px 12px;
+
+    background: #fbfaf6;
+    border: 1px solid #dcd8c7;
+    border-radius: 10px;
+
+    font: inherit;
+}
+
+.auditorium {
+    padding: 18px 8px 0;
+
+    border-radius: var(--radius-md);
+
+    background:
+        radial-gradient(
+            600px 300px at 50% 0%,
+            rgba(217, 142, 63, .10),
+            transparent 70%
+        );
+}
+
+/* loading / error cards */
+.state-card {
+    max-width: 520px;
+    margin: 48px auto;
+    padding: 32px 28px;
+
+    text-align: center;
+
+    background: rgba(255, 255, 255, .6);
+    border: 1.5px dashed #d7d2bf;
+    border-radius: var(--radius-md);
+}
+
+.state-card.error-state h2 {
+    color: #9b4034;
+}
+
+.state-card .spinner {
+    width: 34px;
+    height: 34px;
+
+    margin: 0 auto 14px;
+
+    border-radius: 50%;
+    border: 3px solid var(--primary-soft);
+    border-top-color: var(--primary);
+
+    animation: spin .8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (max-width: 900px) {
+    .event-detail-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .event-info-panel {
+        position: static;
+    }
 }
 
 /* ============================================================
