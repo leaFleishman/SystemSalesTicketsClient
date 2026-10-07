@@ -254,8 +254,6 @@ h3 {
 }
 
 .ticket-card {
-    --tone: var(--primary);
-    --tone-dark: var(--primary-dark);
     --notch: var(--bg);
 
     display: flex;
@@ -276,7 +274,7 @@ h3 {
     background:
         radial-gradient(
             240px 140px at 0% 0%,
-            rgba(255, 255, 255, .20),
+            rgba(255, 255, 255, .22),
             transparent 70%
         ),
         linear-gradient(
@@ -294,20 +292,22 @@ h3 {
         box-shadow .18s ease;
 }
 
-.ticket-card:nth-child(4n + 2) {
-    --tone: #e08a2e;
-    --tone-dark: #a8591a;
+/* ---- card palette (no green) ----
+   Set on the grid's direct children so every card gets its own colour,
+   whether the card is the child itself or sits inside a wrapper/link. */
+.ticket-grid {
+    --tone: #4f46e5;
+    --tone-dark: #3730a3;
 }
 
-.ticket-card:nth-child(4n + 3) {
-    --tone: var(--teal);
-    --tone-dark: var(--teal-dark);
-}
-
-.ticket-card:nth-child(4n + 4) {
-    --tone: var(--plum);
-    --tone-dark: var(--plum-dark);
-}
+.ticket-grid > :nth-child(8n + 1) { --tone: #4f46e5; --tone-dark: #3730a3; } /* indigo */
+.ticket-grid > :nth-child(8n + 2) { --tone: #f0624d; --tone-dark: #b83222; } /* coral */
+.ticket-grid > :nth-child(8n + 3) { --tone: #0ea5e9; --tone-dark: #0369a1; } /* sky */
+.ticket-grid > :nth-child(8n + 4) { --tone: #d6336c; --tone-dark: #9c1d4b; } /* raspberry */
+.ticket-grid > :nth-child(8n + 5) { --tone: #f59e0b; --tone-dark: #b45309; } /* amber */
+.ticket-grid > :nth-child(8n + 6) { --tone: #8b5cf6; --tone-dark: #5b21b6; } /* violet */
+.ticket-grid > :nth-child(8n + 7) { --tone: #e8590c; --tone-dark: #a63d07; } /* orange */
+.ticket-grid > :nth-child(8n + 8) { --tone: #2563eb; --tone-dark: #1e40af; } /* blue */
 
 .ticket-card:hover {
     transform:
@@ -863,20 +863,31 @@ tbody td:first-child {
 .seat-map-wrapper {
     width: 100%;
 
-    overflow-x: auto;
-    overflow-y: hidden;
+    /* the page measures this box and scales the map to fit it */
+    flex: 1;
+    min-height: 0;
 
-    padding:
-        10px 20px 40px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+
+    overflow: hidden;
+
+    padding: 0;
+}
+
+.seat-map-scaler {
+    position: relative;
+    flex-shrink: 0;
 }
 
 .seat-map {
     position: relative;
 
-    /* width / height are set inline by EventDetail.jsx */
-    min-width: 600px;
+    /* width / height / scale are set inline by EventDetail.jsx */
+    transform-origin: top left;
 
-    margin: 0 auto;
+    margin: 0;
 }
 
 /* ============================================================
@@ -1816,11 +1827,6 @@ tbody td:first-child {
         padding-inline: 5px;
     }
 
-    .seat-map {
-        margin-left: 0;
-        margin-right: 0;
-    }
-
     .booking-bar {
         bottom: 8px;
     }
@@ -1838,5 +1844,124 @@ tbody td:first-child {
     .confirm-ticket,
     .confirm-ticket-top .checkmark {
         animation: none;
+    }
+}
+
+/* ============================================================
+   Event detail: everything fits in one screen (no page scroll)
+   --nav-h = height of your navbar; adjust if it differs
+   ============================================================ */
+
+.event-detail-page {
+    --nav-h: 68px;
+
+    height: calc(100dvh - var(--nav-h));
+
+    display: flex;
+    flex-direction: column;
+
+    padding-block: 12px;
+    overflow: hidden;
+}
+
+.event-detail-page .event-detail-layout {
+    flex: 1;
+    min-height: 0;
+
+    display: flex;
+}
+
+.event-detail-page .seat-panel {
+    flex: 1;
+    min-height: 0;
+
+    display: flex;
+    flex-direction: column;
+
+    padding: 14px 20px;
+}
+
+.event-detail-page .seat-panel-header {
+    margin-bottom: 10px;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.event-title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    margin: 0;
+}
+
+.seat-header-main {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 12px;
+}
+
+.event-detail-page .auditorium {
+    flex: 1;
+    min-height: 0;
+
+    display: flex;
+    flex-direction: column;
+
+    padding: 6px 4px 0;
+}
+
+.event-detail-page .stage {
+    flex-shrink: 0;
+
+    max-width: 520px;
+    width: 60%;
+
+    margin: 0 auto 10px;
+    padding: 6px 0 5px;
+}
+
+.event-detail-page .booking-bar {
+    position: static;
+
+    flex-shrink: 0;
+
+    margin-top: 10px;
+    padding: 10px 16px;
+}
+
+.event-detail-page .booking-error {
+    flex-shrink: 0;
+
+    margin-top: 8px;
+    padding: 8px 14px;
+}
+
+.event-detail-page .occupancy-card {
+    padding: 8px 16px;
+    gap: 14px;
+}
+
+.event-detail-page .occupancy-donut {
+    width: 84px;
+    height: 84px;
+}
+
+.event-detail-page .occupancy-text > strong {
+    font-size: 1.4rem;
+}
+
+.event-detail-page .occupancy-legend {
+    margin-top: 4px;
+}
+
+@media (max-width: 760px) {
+    /* on phones let the page scroll normally */
+    .event-detail-page {
+        height: auto;
+        overflow: visible;
+    }
+
+    .event-detail-page .seat-map-wrapper {
+        min-height: 320px;
     }
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { getEventByName } from "../api/events";
@@ -63,6 +63,28 @@ const { name } = useParams();
   const [booking, setBooking] = useState(false);
   const [bookingError, setBookingError] = useState("");
   const [rowFilter, setRowFilter] = useState("");
+
+  // measure the free area for the seat map so it always fits without scrolling
+  const [mapBox, setMapBox] = useState({ w: 0, h: 0 });
+  const observerRef = useRef(null);
+
+  const mapAreaRef = useCallback((node) => {
+    observerRef.current?.disconnect();
+    observerRef.current = null;
+
+    if (!node) return;
+
+    const update = () =>
+      setMapBox({
+        w: node.clientWidth,
+        h: node.clientHeight,
+      });
+
+    update();
+
+    observerRef.current = new ResizeObserver(update);
+    observerRef.current.observe(node);
+  }, []);
 
   useEffect(() => {
     load();
@@ -392,6 +414,15 @@ const { name } = useParams();
 
   const seatLayout = createSeatLayout(seats);
 
+  const mapScale =
+    mapBox.w > 0 && mapBox.h > 0
+      ? Math.min(
+          mapBox.w / seatLayout.width,
+          mapBox.h / seatLayout.height,
+          1.25
+        )
+      : 1;
+
   const filteredSeats = rowFilter
     ? seats.filter(
         (seat) =>
@@ -409,30 +440,13 @@ const { name } = useParams();
 
   return (
     <main className="page event-detail-page">
-      <div className="page-header">
-        <div>
-          <span className="eyebrow">
-            EVENT
-          </span>
-
-          <h1>
-            {event.name ??
-              event.Name}
-          </h1>
-        </div>
-      </div>
-
       <section className="event-detail-layout">
         <div className="seat-panel">
           <div className="seat-panel-header">
             <div className="seat-header-main">
-              <span className="eyebrow">
-                SEAT MAP
-              </span>
-
-              <h2>
-                בחירת מושב
-              </h2>
+              <h1 className="event-title">
+                {event.name ?? event.Name}
+              </h1>
 
               <div className="event-chips">
                 {eventDateText && (
@@ -549,12 +563,23 @@ const { name } = useParams();
               </span>
             </div>
 
-            <div className="seat-map-wrapper">
+            <div
+              className="seat-map-wrapper"
+              ref={mapAreaRef}
+            >
+              <div
+                className="seat-map-scaler"
+                style={{
+                  width: `${seatLayout.width * mapScale}px`,
+                  height: `${seatLayout.height * mapScale}px`,
+                }}
+              >
               <div
                 className="seat-map"
                 style={{
                   width: `${seatLayout.width}px`,
                   height: `${seatLayout.height}px`,
+                  transform: `scale(${mapScale})`,
                 }}
               >
                 {positionedSeats.map(
@@ -631,6 +656,7 @@ const { name } = useParams();
                     );
                   }
                 )}
+              </div>
               </div>
             </div>
           </div>
