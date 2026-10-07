@@ -10,6 +10,9 @@ import { toast } from "react-toastify";
 
 import "../theme.css";
 
+const getEventId = (e) =>
+  e?.eventId ?? e?.EventId ?? e?.id ?? e?.Id;
+
 function EventDetail() {
 const { name } = useParams();
   const navigate = useNavigate();
@@ -38,7 +41,12 @@ const { name } = useParams();
         throw new Error("Event name is missing");
       }
 
-      const eventData = await getEventByName(name);
+      const response = await getEventByName(name);
+
+      // the API may return a single object or an array
+      const eventData = Array.isArray(response)
+        ? response[0]
+        : response;
 
       if (!eventData) {
         throw new Error("Event was not found");
@@ -46,11 +54,10 @@ const { name } = useParams();
 
       setEvent(eventData);
 
-      const eventId =
-        eventData.eventId ??
-        eventData.EventId;
+      const eventId = getEventId(eventData);
 
-      if (!eventId) {
+      if (eventId === undefined || eventId === null) {
+        console.error("Unexpected event payload:", eventData);
         throw new Error("Event ID is missing");
       }
 
@@ -135,9 +142,7 @@ const { name } = useParams();
       setBooking(true);
       setBookingError("");
 
-      const eventId =
-        event.eventId ??
-        event.EventId;
+      const eventId = getEventId(event);
 
       const seatId =
         getSeatId(selectedSeat);
