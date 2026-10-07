@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import eventsApi from "../api/eventsApi";
-import eventSeatsApi from "../api/eventSeatsApi";
-import ordersApi from "../api/ordersApi";
+import eventsApi from "../api/events";
+import eventSeatsApi from "../api/eventSeats";
+import ordersApi from "../api/orders";
 import { useAuth } from "../context/AuthContext";
 import { toast } from "react-toastify";
 import "./EventDetail.css";
