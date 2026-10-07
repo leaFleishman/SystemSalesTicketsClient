@@ -460,26 +460,22 @@ const { name } = useParams();
                 </span>
               </div>
 
-              <select
+              <input
+                type="number"
+                inputMode="numeric"
+                min="1"
+                className="row-filter"
                 value={rowFilter}
                 onChange={(e) =>
                   setRowFilter(e.target.value)
                 }
-                className="row-filter"
-              >
-                <option value="">
-                  כל השורות
-                </option>
-
-                {rows.map((row) => (
-                  <option
-                    key={row}
-                    value={row}
-                  >
-                    שורה {row}
-                  </option>
-                ))}
-              </select>
+                placeholder={
+                  rows.length
+                    ? `סינון לפי שורה (${rows[0]}–${rows[rows.length - 1]})`
+                    : "סינון לפי שורה"
+                }
+                aria-label="סינון לפי שורה"
+              />
             </div>
 
             <div
@@ -567,6 +563,12 @@ const { name } = useParams();
               className="seat-map-wrapper"
               ref={mapAreaRef}
             >
+              {rowFilter && positionedSeats.length === 0 && (
+                <div className="no-row">
+                  לא נמצאה שורה {rowFilter}
+                </div>
+              )}
+
               <div
                 className="seat-map-scaler"
                 style={{
