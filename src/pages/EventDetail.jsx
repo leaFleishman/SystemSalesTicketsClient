@@ -10,6 +10,46 @@ import { toast } from "react-toastify";
 
 import "../theme.css";
 
+// The API (or the api/events helper) may return the event in different shapes:
+// the object itself, an array, an axios response ({ data }), or { event }.
+const normalizeEvent = (raw) => {
+  let e = raw;
+
+  for (let i = 0; i < 3; i++) {
+    if (Array.isArray(e)) {
+      e = e[0];
+    } else if (
+      e &&
+      typeof e === "object" &&
+      findIdKey(e) === undefined &&
+      (e.data || e.event || e.Event || e.result)
+    ) {
+      e = e.data ?? e.event ?? e.Event ?? e.result;
+    } else {
+      break;
+    }
+  }
+
+  return e;
+};
+
+// matches eventId / EventId / event_id / EventID / id / Id / ID
+function findIdKey(obj) {
+  if (!obj || typeof obj !== "object") return undefined;
+
+  const keys = Object.keys(obj);
+
+  return (
+    keys.find((k) => /^event[_-]?id$/i.test(k)) ??
+    keys.find((k) => /^id$/i.test(k))
+  );
+}
+
+const getEventId = (e) => {
+  const key = findIdKey(e);
+  return key === undefined ? undefined : e[key];
+};
+
 function EventDetail() {
 const { name } = useParams();
   const navigate = useNavigate();
@@ -38,7 +78,9 @@ const { name } = useParams();
         throw new Error("Event name is missing");
       }
 
-      const eventData = await getEventByName(name);
+      const response = await getEventByName(name);
+
+      const eventData = normalizeEvent(response);
 
       if (!eventData) {
         throw new Error("Event was not found");
@@ -46,12 +88,17 @@ const { name } = useParams();
 
       setEvent(eventData);
 
-      const eventId =
-        eventData.eventId ??
-        eventData.EventId;
+      const eventId = getEventId(eventData);
 
-      if (!eventId) {
-        throw new Error("Event ID is missing");
+      if (eventId === undefined || eventId === null) {
+        console.error("Unexpected event payload:", eventData);
+        throw new Error(
+          "Event ID is missing (received fields: " +
+            (typeof eventData === "object"
+              ? Object.keys(eventData).join(", ")
+              : typeof eventData) +
+            ")"
+        );
       }
 
       const seatsData =
@@ -135,9 +182,7 @@ const { name } = useParams();
       setBooking(true);
       setBookingError("");
 
-      const eventId =
-        event.eventId ??
-        event.EventId;
+      const eventId = getEventId(event);
 
       const seatId =
         getSeatId(selectedSeat);
@@ -226,6 +271,19 @@ const { name } = useParams();
   const soldTickets =
     totalSeats - availableTickets;
 
+  const soldPercent =
+    totalSeats > 0
+      ? Math.round((soldTickets / totalSeats) * 100)
+      : 0;
+
+  const DONUT_R = 38;
+  const DONUT_C = 2 * Math.PI * DONUT_R;
+
+  const eventDate = new Date(event.date ?? event.Date);
+  const eventDateText = isNaN(eventDate)
+    ? ""
+    : eventDate.toLocaleDateString("he-IL");
+
   const rows = [
     ...new Set(
       seats.map(getRow)
@@ -247,11 +305,13 @@ const { name } = useParams();
    * הלוגיקה של האירוע וה־API אינה תלויה בעיצוב.
    */
   const createSeatLayout = (seatList) => {
-    const SEAT_GAP = 32; // מרחק בין מושבים לאורך הקשת
-    const ROW_GAP = 38; // מרחק בין שורות
-    const INNER_RADIUS = 120;
-    const MAX_SPAN = Math.PI * 0.78; // זווית פתיחה מקסימלית (~140°)
-    const SEAT_SIZE = 27;
+    const SEAT_GAP = 40; // מרחק בין מושבים לאורך הקשת
+    const ROW_GAP = 50; // מרחק בין שורות
+    const INNER_RADIUS = 340; // רדיוס גדול = קשת שטוחה יותר
+    const MAX_SPAN = Math.PI * 0.5; // זווית פתיחה מקסימלית (~90°)
+    const X_STRETCH = 1.5; // מתיחה לרוחב
+    const Y_SQUASH = 0.75; // כיווץ לגובה
+    const SEAT_SIZE = 34;
     const PADDING = 30;
 
     const byRow = new Map();
@@ -297,8 +357,8 @@ const { name } = useParams();
 
         raw.push({
           seat,
-          x: radius * Math.cos(angle),
-          y: radius * Math.sin(angle),
+          x: radius * Math.cos(angle) * X_STRETCH,
+          y: radius * Math.sin(angle) * Y_SQUASH,
         });
       });
     });
@@ -363,90 +423,9 @@ const { name } = useParams();
       </div>
 
       <section className="event-detail-layout">
-        <div className="event-info-panel">
-          <div className="event-info">
-            <h2>
-              {event.name ??
-                event.Name}
-            </h2>
-
-            <div className="event-info-row">
-              <span>תאריך</span>
-
-              <strong>
-                {new Date(
-                  event.date ??
-                    event.Date
-                ).toLocaleDateString(
-                  "he-IL"
-                )}
-              </strong>
-            </div>
-
-            <div className="event-info-row">
-              <span>
-                מחיר כרטיס
-              </span>
-
-              <strong>
-                ₪
-                {event.price ??
-                  event.Price}
-              </strong>
-            </div>
-
-            <div className="event-info-row">
-              <span>מקומות</span>
-
-              <strong>
-                {totalSeats}
-              </strong>
-            </div>
-
-            <div className="event-info-row">
-              <span>נמכרו</span>
-
-              <strong>
-                {soldTickets}
-              </strong>
-            </div>
-
-            <div className="event-info-row">
-              <span>נותרו</span>
-
-              <strong className="available-number">
-                {availableTickets}
-              </strong>
-            </div>
-          </div>
-
-          <div className="seat-legend">
-            <div>
-              <span className="legend-seat available" />
-              <span>
-                פנוי
-              </span>
-            </div>
-
-            <div>
-              <span className="legend-seat selected" />
-              <span>
-                נבחר
-              </span>
-            </div>
-
-            <div>
-              <span className="legend-seat taken" />
-              <span>
-                תפוס
-              </span>
-            </div>
-          </div>
-        </div>
-
         <div className="seat-panel">
           <div className="seat-panel-header">
-            <div>
+            <div className="seat-header-main">
               <span className="eyebrow">
                 SEAT MAP
               </span>
@@ -454,30 +433,113 @@ const { name } = useParams();
               <h2>
                 בחירת מושב
               </h2>
+
+              <div className="event-chips">
+                {eventDateText && (
+                  <span className="event-chip">
+                    {eventDateText}
+                  </span>
+                )}
+
+                <span className="event-chip">
+                  ₪{event.price ?? event.Price}
+                </span>
+              </div>
+
+              <select
+                value={rowFilter}
+                onChange={(e) =>
+                  setRowFilter(e.target.value)
+                }
+                className="row-filter"
+              >
+                <option value="">
+                  כל השורות
+                </option>
+
+                {rows.map((row) => (
+                  <option
+                    key={row}
+                    value={row}
+                  >
+                    שורה {row}
+                  </option>
+                ))}
+              </select>
             </div>
 
-            <select
-              value={rowFilter}
-              onChange={(e) =>
-                setRowFilter(
-                  e.target.value
-                )
-              }
-              className="row-filter"
+            <div
+              className="occupancy-card"
+              aria-label={`${soldTickets} מתוך ${totalSeats} מושבים הוזמנו`}
             >
-              <option value="">
-                כל השורות
-              </option>
+              <svg
+                className="occupancy-donut"
+                viewBox="0 0 100 100"
+                role="img"
+              >
+                <circle
+                  className="occupancy-track"
+                  cx="50"
+                  cy="50"
+                  r={DONUT_R}
+                />
 
-              {rows.map((row) => (
-                <option
-                  key={row}
-                  value={row}
+                <circle
+                  className="occupancy-fill"
+                  cx="50"
+                  cy="50"
+                  r={DONUT_R}
+                  strokeDasharray={`${
+                    (soldPercent / 100) * DONUT_C
+                  } ${DONUT_C}`}
+                  transform="rotate(-90 50 50)"
+                />
+
+                <text
+                  x="50"
+                  y="48"
+                  className="occupancy-percent"
                 >
-                  שורה {row}
-                </option>
-              ))}
-            </select>
+                  {soldPercent}%
+                </text>
+
+                <text
+                  x="50"
+                  y="63"
+                  className="occupancy-caption"
+                >
+                  הוזמנו
+                </text>
+              </svg>
+
+              <div className="occupancy-text">
+                <strong>
+                  {soldTickets}
+                  <small> / {totalSeats}</small>
+                </strong>
+
+                <span>
+                  מושבים הוזמנו
+                </span>
+
+                <div className="occupancy-legend">
+                  <span>
+                    <i className="legend-seat available" />
+                    פנוי ({availableTickets})
+                  </span>
+
+                  <span>
+                    <i className="legend-seat selected" />
+                    נבחר
+                  </span>
+
+                  <span>
+                    <i className="legend-seat taken" />
+                    תפוס
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="auditorium">
