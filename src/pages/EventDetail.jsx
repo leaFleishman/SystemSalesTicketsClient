@@ -94,6 +94,7 @@ function EventDetail() {
           from: `/events/${eventName}`,
         },
       });
+
       return;
     }
 
@@ -186,14 +187,6 @@ function EventDetail() {
         Number(a) - Number(b)
     );
 
-  /*
-   * מספר המושבים בכל "גובה" במפה.
-   *
-   * כל המספרים זוגיים ולכן:
-   * - אין מושב בודד באמצע.
-   * - צד שמאל וצד ימין תמיד זהים.
-   * - הסכום הוא בדיוק 170.
-   */
   const visualRowSizes = [
     6,
     10,
@@ -207,12 +200,6 @@ function EventDetail() {
     28,
   ];
 
-  /*
-   * יצירת מיקומים בצורת חצי עיגול.
-   *
-   * אין כאן קשת לכל שורה.
-   * כל המושבים הם חלק ממפה אחת רציפה.
-   */
   const createSeatPositions = (seatList) => {
     const positions = [];
 
@@ -252,14 +239,6 @@ function EventDetail() {
       }
     );
 
-    /*
-     * אם קיימים בדיוק 170 מושבים,
-     * כל מושב מקבל מיקום אחד.
-     *
-     * אם כמות המושבים שונה,
-     * אנחנו עדיין מציגים את כולם
-     * במיקומים הראשונים.
-     */
     return seatList.map(
       (seat, index) => ({
         seat,
