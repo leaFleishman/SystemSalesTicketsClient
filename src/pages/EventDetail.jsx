@@ -6,13 +6,12 @@ import { getSeatsForEvent } from "../api/eventSeats";
 import { createOrder } from "../api/orders";
 
 import { useAuth } from "../context/AuthContext";
-
 import { toast } from "react-toastify";
 
 import "../theme.css";
 
 function EventDetail() {
-  const { eventName } = useParams();
+  const { name } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -27,27 +26,56 @@ function EventDetail() {
 
   useEffect(() => {
     load();
-  }, [eventName]);
+  }, [name]);
 
   const load = async () => {
     try {
       setLoading(true);
       setError("");
+      setBookingError("");
 
-      const eventResponse = await getEventByName(eventName);
-      const eventData = eventResponse.data ?? eventResponse;
+      if (!name) {
+        throw new Error("Event name is missing");
+      }
+
+      const eventData = await getEventByName(name);
+
+      if (!eventData) {
+        throw new Error("Event was not found");
+      }
 
       setEvent(eventData);
 
-      const eventId = eventData.eventId ?? eventData.EventId;
+      const eventId =
+        eventData.eventId ??
+        eventData.EventId;
 
-      const seatsResponse = await getSeatsForEvent(eventId);
-      const seatsData = seatsResponse.data ?? seatsResponse;
+      if (!eventId) {
+        throw new Error("Event ID is missing");
+      }
 
-      setSeats(Array.isArray(seatsData) ? seatsData : []);
+      const seatsData =
+        await getSeatsForEvent(eventId);
+
+      setSeats(
+        Array.isArray(seatsData)
+          ? seatsData
+          : []
+      );
     } catch (err) {
-      console.error(err);
-      setError("לא ניתן לטעון את פרטי האירוע");
+      console.error(
+        "Failed to load event:",
+        err
+      );
+
+      setEvent(null);
+      setSeats([]);
+
+      setError(
+        err.response?.data ||
+          err.message ||
+          "לא ניתן לטעון את פרטי האירוע"
+      );
     } finally {
       setLoading(false);
     }
@@ -63,7 +91,9 @@ function EventDetail() {
     seat.line ?? seat.Line;
 
   const isAvailable = (seat) =>
-    seat.isAvailable ?? seat.IsAvailable ?? false;
+    seat.isAvailable ??
+    seat.IsAvailable ??
+    false;
 
   const handleSeatClick = (seat) => {
     if (!isAvailable(seat)) {
@@ -74,7 +104,8 @@ function EventDetail() {
 
     if (
       selectedSeat &&
-      getSeatId(selectedSeat) === getSeatId(seat)
+      getSeatId(selectedSeat) ===
+        getSeatId(seat)
     ) {
       setSelectedSeat(null);
       return;
@@ -91,7 +122,9 @@ function EventDetail() {
     if (!user) {
       navigate("/login", {
         state: {
-          from: `/events/${eventName}`,
+          from: `/events/${encodeURIComponent(
+            name
+          )}`,
         },
       });
 
@@ -103,28 +136,37 @@ function EventDetail() {
       setBookingError("");
 
       const eventId =
-        event.eventId ?? event.EventId;
+        event.eventId ??
+        event.EventId;
 
-      const seatId = getSeatId(selectedSeat);
+      const seatId =
+        getSeatId(selectedSeat);
 
-      const response = await createOrder({
-        eventId,
-        seatId,
-      });
+      const order =
+        await createOrder({
+          eventId,
+          seatId,
+        });
 
-      const order = response.data ?? response;
-
-      navigate("/order-confirmation", {
-        state: {
-          order,
-          event,
-          seat: selectedSeat,
-        },
-      });
+      navigate(
+        "/order-confirmation",
+        {
+          state: {
+            order,
+            event,
+            seat: selectedSeat,
+          },
+        }
+      );
     } catch (err) {
-      console.error(err);
+      console.error(
+        "Failed to create order:",
+        err
+      );
 
-      if (err.response?.status === 409) {
+      if (
+        err.response?.status === 409
+      ) {
         setBookingError(
           "המושב נתפס על ידי משתמש אחר. המושבים עודכנו."
         );
@@ -138,6 +180,7 @@ function EventDetail() {
       } else {
         setBookingError(
           err.response?.data?.message ||
+            err.response?.data ||
             "אירעה שגיאה בעת הזמנת המושב"
         );
       }
@@ -151,7 +194,9 @@ function EventDetail() {
       <main className="page">
         <div className="state-card">
           <div className="spinner" />
-          <p>טוען את פרטי האירוע...</p>
+          <p>
+            טוען את פרטי האירוע...
+          </p>
         </div>
       </main>
     );
@@ -161,8 +206,13 @@ function EventDetail() {
     return (
       <main className="page">
         <div className="state-card error-state">
-          <h2>לא ניתן להציג את האירוע</h2>
-          <p>{error || "האירוע לא נמצא"}</p>
+          <h2>
+            לא ניתן להציג את האירוע
+          </h2>
+          <p>
+            {error ||
+              "האירוע לא נמצא"}
+          </p>
         </div>
       </main>
     );
@@ -176,7 +226,11 @@ function EventDetail() {
   const soldTickets =
     totalSeats - availableTickets;
 
-  const rows = [...new Set(seats.map(getRow))]
+  const rows = [
+    ...new Set(
+      seats.map(getRow)
+    ),
+  ]
     .filter(
       (row) =>
         row !== undefined &&
@@ -187,6 +241,10 @@ function EventDetail() {
         Number(a) - Number(b)
     );
 
+  /*
+   * מיקום ויזואלי של המושבים בלבד.
+   * הלוגיקה של האירוע וה־API אינה תלויה בעיצוב.
+   */
   const visualRowSizes = [
     6,
     10,
@@ -200,7 +258,9 @@ function EventDetail() {
     28,
   ];
 
-  const createSeatPositions = (seatList) => {
+  const createSeatPositions = (
+    seatList
+  ) => {
     const positions = [];
 
     const mapWidth = 900;
@@ -227,12 +287,10 @@ function EventDetail() {
           i < count;
           i++
         ) {
-          const x =
-            startX +
-            i * 29;
-
           positions.push({
-            x,
+            x:
+              startX +
+              i * 29,
             y,
           });
         }
@@ -255,13 +313,17 @@ function EventDetail() {
   const filteredSeats = rowFilter
     ? seats.filter(
         (seat) =>
-          String(getRow(seat)) ===
+          String(
+            getRow(seat)
+          ) ===
           String(rowFilter)
       )
     : seats;
 
   const positionedSeats =
-    createSeatPositions(filteredSeats);
+    createSeatPositions(
+      filteredSeats
+    );
 
   return (
     <main className="page event-detail-page">
@@ -272,7 +334,8 @@ function EventDetail() {
           </span>
 
           <h1>
-            {event.name ?? event.Name}
+            {event.name ??
+              event.Name}
           </h1>
         </div>
       </div>
@@ -281,7 +344,8 @@ function EventDetail() {
         <div className="event-info-panel">
           <div className="event-info">
             <h2>
-              {event.name ?? event.Name}
+              {event.name ??
+                event.Name}
             </h2>
 
             <div className="event-info-row">
@@ -289,7 +353,8 @@ function EventDetail() {
 
               <strong>
                 {new Date(
-                  event.date ?? event.Date
+                  event.date ??
+                    event.Date
                 ).toLocaleDateString(
                   "he-IL"
                 )}
@@ -297,7 +362,9 @@ function EventDetail() {
             </div>
 
             <div className="event-info-row">
-              <span>מחיר כרטיס</span>
+              <span>
+                מחיר כרטיס
+              </span>
 
               <strong>
                 ₪
@@ -334,17 +401,23 @@ function EventDetail() {
           <div className="seat-legend">
             <div>
               <span className="legend-seat available" />
-              <span>פנוי</span>
+              <span>
+                פנוי
+              </span>
             </div>
 
             <div>
               <span className="legend-seat selected" />
-              <span>נבחר</span>
+              <span>
+                נבחר
+              </span>
             </div>
 
             <div>
               <span className="legend-seat taken" />
-              <span>תפוס</span>
+              <span>
+                תפוס
+              </span>
             </div>
           </div>
         </div>
@@ -387,7 +460,9 @@ function EventDetail() {
 
           <div className="auditorium">
             <div className="stage">
-              <span>STAGE</span>
+              <span>
+                STAGE
+              </span>
             </div>
 
             <div className="seat-map-wrapper">
@@ -399,16 +474,21 @@ function EventDetail() {
                     y,
                   }) => {
                     const seatId =
-                      getSeatId(seat);
+                      getSeatId(
+                        seat
+                      );
 
                     const available =
-                      isAvailable(seat);
+                      isAvailable(
+                        seat
+                      );
 
                     const selected =
                       selectedSeat &&
                       getSeatId(
                         selectedSeat
-                      ) === seatId;
+                      ) ===
+                        seatId;
 
                     return (
                       <button
@@ -423,13 +503,17 @@ function EventDetail() {
                             ? "selected"
                             : "",
                         ]
-                          .filter(Boolean)
+                          .filter(
+                            Boolean
+                          )
                           .join(" ")}
                         style={{
                           left: `${x}px`,
                           top: `${y}px`,
                         }}
-                        disabled={!available}
+                        disabled={
+                          !available
+                        }
                         onClick={() =>
                           handleSeatClick(
                             seat
@@ -450,7 +534,9 @@ function EventDetail() {
                           seat
                         )}`}
                       >
-                        {getLine(seat)}
+                        {getLine(
+                          seat
+                        )}
                       </button>
                     );
                   }
