@@ -11,7 +11,7 @@ import { toast } from "react-toastify";
 import "../theme.css";
 
 function EventDetail() {
-  const { name } = useParams();
+const { name: eventName } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
 
