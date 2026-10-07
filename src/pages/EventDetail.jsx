@@ -6,7 +6,7 @@ import { getSeatsForEvent } from "../api/eventSeats";
 import { createOrder } from "../api/orders";
 
 import { useAuth } from "../context/AuthContext";
-import { toast } from "react-toastify";
+import { useToast } from "../context/ToastContext";
 
 import "../theme.css";
 
@@ -53,7 +53,11 @@ const getEventId = (e) => {
 function EventDetail() {
 const { name } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  // NOTE: AuthContext exposes `isAuthenticated` / `session`, not `user`.
+  // Reading a non-existent `user` made every booking attempt bounce to /login
+  // (and from there straight back to the events list).
+  const { isAuthenticated } = useAuth();
+  const toast = useToast();
 
   const [event, setEvent] = useState(null);
   const [seats, setSeats] = useState([]);
@@ -188,12 +192,14 @@ const { name } = useParams();
       return;
     }
 
-    if (!user) {
+    if (!isAuthenticated) {
       navigate("/login", {
         state: {
-          from: `/events/${encodeURIComponent(
-            name
-          )}`,
+          from: {
+            pathname: `/events/${encodeURIComponent(
+              name
+            )}`,
+          },
         },
       });
 
@@ -219,7 +225,7 @@ const { name } = useParams();
         "/order-confirmation",
         {
           state: {
-            order,
+            order: order || {},
             event,
             seat: selectedSeat,
           },
@@ -238,7 +244,7 @@ const { name } = useParams();
           "המושב נתפס על ידי משתמש אחר. המושבים עודכנו."
         );
 
-        toast.warning(
+        toast.error(
           "המושב כבר הוזמן על ידי משתמש אחר"
         );
 

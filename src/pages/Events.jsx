@@ -58,30 +58,61 @@ export default function Events() {
         <EmptyState title="אין אירועים כרגע" description="ברגע שיתווספו אירועים חדשים הם יופיעו כאן." />
       ) : (
         <>
-          <div className="ticket-grid">
-            {page.data.map((ev) => {
+          <div className="evt-grid">
+            {page.data.map((ev, i) => {
               const d = new Date(ev.date);
               const valid = !Number.isNaN(d.getTime());
+              const weekday = valid ? d.toLocaleDateString("he-IL", { weekday: "long" }) : "";
+              const time = valid ? d.toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" }) : "";
               return (
-              <Link
-                to={`/events/${encodeURIComponent(ev.name)}`}
-                key={ev.id}
-                className={`ticket-card${ev.isCancelled ? " ticket-card--cancelled" : ""}`}
-              >
-                <div className="ticket-main">
-                  <h3>{ev.name}</h3>
-                  {ev.isCancelled && <span className="badge badge-danger">האירוע בוטל</span>}
-                  <div className="ticket-meta">
-                    <span>{formatDate(ev.date)}</span>
-                    <span>{ev.numberOfSeats} מקומות</span>
+                <Link
+                  to={`/events/${encodeURIComponent(ev.name)}`}
+                  key={ev.id}
+                  className={`evt-card${ev.isCancelled ? " evt-card--cancelled" : ""}`}
+                  style={{ "--i": i }}
+                >
+                  <span className="evt-ornament" aria-hidden="true" />
+
+                  <div className="evt-date">
+                    <span className="evt-weekday">{weekday}</span>
+                    <span className="evt-day">{valid ? d.getDate() : "—"}</span>
+                    <span className="evt-month">
+                      {valid ? d.toLocaleDateString("he-IL", { month: "long" }) : ""}
+                    </span>
                   </div>
-                </div>
-                <div className="ticket-stub">
-                  <span className="ticket-day">{valid ? d.getDate() : "—"}</span>
-                  <span className="ticket-month">{valid ? d.toLocaleDateString("he-IL", { month: "short" }) : ""}</span>
-                  <span className="ticket-price">{formatPrice(ev.price)}</span>
-                </div>
-              </Link>
+
+                  <div className="evt-body">
+                    <div className="evt-kicker">
+                      {ev.isCancelled ? (
+                        <span className="evt-cancelled">האירוע בוטל</span>
+                      ) : (
+                        <span>{time ? `בשעה ${time}` : "אירוע"}</span>
+                      )}
+                    </div>
+                    <h3 className="evt-title">{ev.name}</h3>
+                    <div className="evt-meta">
+                      <span>
+                        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="16" rx="3" /><path d="M8 3v4M16 3v4M3 10h18" /></svg>
+                        {formatDate(ev.date)}
+                      </span>
+                      <span>
+                        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M5 11V7a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3v4" /><path d="M3 13a2 2 0 0 1 4 0v3h10v-3a2 2 0 0 1 4 0v6H3z" /></svg>
+                        {ev.numberOfSeats} מקומות
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="evt-foot">
+                    <div className="evt-price">
+                      <small>החל מ־</small>
+                      <strong>{formatPrice(ev.price)}</strong>
+                    </div>
+                    <span className="evt-cta">
+                      {ev.isCancelled ? "לפרטים" : "בחירת מושב"}
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M11 6l-6 6 6 6" /></svg>
+                    </span>
+                  </div>
+                </Link>
               );
             })}
           </div>
