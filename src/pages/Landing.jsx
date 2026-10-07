@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 
 const icon = {
@@ -51,9 +52,57 @@ const STEPS = [
   { title: "מזמינים ונהנים", text: "מקבלים אישור הזמנה ומגיעים לאירוע." },
 ];
 
+const CATEGORIES = ["הופעות חיות", "תיאטרון והצגות", "ספורט", "סטנדאפ", "מוזיקה קלאסית", "פסטיבלים", "אירועי ילדים", "ערבי שירה"];
+
 export default function Landing() {
+  const rootRef = useRef(null);
+  const tiltRef = useRef(null);
+
+  // Scroll-reveal: fades elements in as they enter the viewport
+  useEffect(() => {
+    const els = rootRef.current?.querySelectorAll(".reveal");
+    if (!els || !("IntersectionObserver" in window)) {
+      els?.forEach((el) => el.classList.add("in"));
+      return;
+    }
+    const io = new IntersectionObserver(
+      (entries) =>
+        entries.forEach((e) => {
+          if (e.isIntersecting) {
+            e.target.classList.add("in");
+            io.unobserve(e.target);
+          }
+        }),
+      { threshold: 0.15, rootMargin: "0px 0px -6% 0px" }
+    );
+    els.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, []);
+
+  // Gentle 3D tilt of the hero ticket following the pointer
+  const onMove = (e) => {
+    const el = tiltRef.current;
+    if (!el || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const r = e.currentTarget.getBoundingClientRect();
+    const x = (e.clientX - r.left) / r.width - 0.5;
+    const y = (e.clientY - r.top) / r.height - 0.5;
+    el.style.setProperty("--tilt-y", `${x * 10}deg`);
+    el.style.setProperty("--tilt-x", `${-y * 8}deg`);
+  };
+  const onLeave = () => {
+    tiltRef.current?.style.setProperty("--tilt-x", "0deg");
+    tiltRef.current?.style.setProperty("--tilt-y", "0deg");
+  };
+
+  // Soft spotlight that follows the cursor inside a feature card
+  const spot = (e) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    e.currentTarget.style.setProperty("--mx", `${e.clientX - r.left}px`);
+    e.currentTarget.style.setProperty("--my", `${e.clientY - r.top}px`);
+  };
+
   return (
-    <div className="lp">
+    <div className="lp" ref={rootRef}>
       <section className="lp-hero">
         <div className="lp-hero-inner">
           <div>
@@ -90,10 +139,11 @@ export default function Landing() {
             <p className="lp-note">ההרשמה חינמית ולוקחת פחות מדקה</p>
           </div>
 
-          <div className="lp-visual" aria-hidden="true">
+          <div className="lp-visual" aria-hidden="true" onMouseMove={onMove} onMouseLeave={onLeave}>
             <div className="lp-chip lp-chip--a">
               <i>✓</i> המושב שלך שמור
             </div>
+            <div className="lp-tilt" ref={tiltRef}>
             <div className="lp-ticket">
               <div className="lp-ticket-top">
                 <div className="lp-ticket-label">כרטיס כניסה</div>
@@ -118,6 +168,7 @@ export default function Landing() {
                 <div className="lp-barcode" />
               </div>
             </div>
+            </div>
             <div className="lp-chip lp-chip--b">
               <i>★</i> מושבים פנויים עכשיו
             </div>
@@ -125,14 +176,22 @@ export default function Landing() {
         </div>
       </section>
 
+      <div className="lp-ribbon" aria-hidden="true">
+        <div className="lp-ribbon-track">
+          {[...CATEGORIES, ...CATEGORIES, ...CATEGORIES, ...CATEGORIES].map((c, i) => (
+            <span key={i}>{c}</span>
+          ))}
+        </div>
+      </div>
+
       <section className="lp-section">
-        <div className="lp-section-head">
+        <div className="lp-section-head reveal">
           <h2>למה להזמין אצלנו?</h2>
           <p>כל מה שצריך כדי להגיע לאירוע, בלי כאב ראש.</p>
         </div>
         <div className="lp-features">
-          {FEATURES.map((f) => (
-            <div className="lp-feature" key={f.title}>
+          {FEATURES.map((f, i) => (
+            <div className="lp-feature reveal" style={{ "--d": `${i * 0.12}s` }} onMouseMove={spot} key={f.title}>
               <div className="lp-feature-icon">{f.svg}</div>
               <h3>{f.title}</h3>
               <p>{f.text}</p>
@@ -142,13 +201,13 @@ export default function Landing() {
       </section>
 
       <section className="lp-section">
-        <div className="lp-section-head">
+        <div className="lp-section-head reveal">
           <h2>איך זה עובד?</h2>
           <p>שלושה צעדים פשוטים.</p>
         </div>
         <div className="lp-steps">
           {STEPS.map((s, i) => (
-            <div className="lp-step" key={s.title}>
+            <div className="lp-step reveal" style={{ "--d": `${i * 0.15}s` }} key={s.title}>
               <div className="lp-step-num">{i + 1}</div>
               <h3>{s.title}</h3>
               <p>{s.text}</p>
@@ -158,7 +217,7 @@ export default function Landing() {
       </section>
 
       <section className="lp-final">
-        <div className="lp-final-card">
+        <div className="lp-final-card reveal">
           <h2>מוכנים להתחיל?</h2>
           <p>הצטרפו עכשיו ותפסו את המושבים הטובים לפני כולם.</p>
           <div className="lp-cta">
