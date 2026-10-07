@@ -5,8 +5,7 @@ import eventSeatsApi from "../api/eventSeats";
 import ordersApi from "../api/orders";
 import { useAuth } from "../context/AuthContext";
 import { toast } from "react-toastify";
-import "./EventDetail.css";
-
+import "../themes.css";
 function EventDetail() {
     const { eventName } = useParams();
     const navigate = useNavigate();
