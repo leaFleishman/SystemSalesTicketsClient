@@ -109,6 +109,7 @@ export default function OrderConfirmation() {
             <span>מועד ההזמנה</span>
             <span>{formatDateTime(orderDate)}</span>
           </div>
+          <p className="ticket-note">הכרטיס הינו אישי ואינו ניתן להעברה.</p>
         </div>
       </div>
 

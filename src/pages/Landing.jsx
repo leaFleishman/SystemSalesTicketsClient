@@ -167,6 +167,7 @@ export default function Landing() {
                 </div>
                 <div className="lp-barcode" />
               </div>
+              <div className="ticket-note">הכרטיס הינו אישי ואינו ניתן להעברה.</div>
             </div>
             </div>
             <div className="lp-chip lp-chip--b">

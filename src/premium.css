@@ -1588,3 +1588,18 @@ td .btn { white-space: nowrap; }
 .auth-panel .auth-header { text-align: center; }
 .auth-panel .auth-header::before { margin: 0 auto 18px; }
 .auth-panel .auth-switch { text-align: center; }
+
+/* Ticket policy note (landing sample ticket, auth aside ticket, login, order confirmation) */
+.ticket-note {
+  margin: 0;
+  padding: 10px 22px 14px;
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #7b755f;
+}
+.confirm-ticket-body .ticket-note { padding: 16px 0 0; }
+.ticket-note--plain {
+  padding: 14px 0 0;
+  color: var(--ink-soft);
+}

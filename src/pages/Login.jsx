@@ -84,6 +84,7 @@ export default function Login() {
           {loading ? "מתחבר..." : "התחברות"}
         </button>
       </form>
+      <p className="ticket-note ticket-note--plain">הכרטיס הינו אישי ואינו ניתן להעברה.</p>
     </AuthShell>
   );
 }
