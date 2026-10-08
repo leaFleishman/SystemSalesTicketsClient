@@ -49,9 +49,16 @@ export default function AdminUsers() {
               <tbody>
                 {page.data.map((user) => (
                   <tr key={user.inferredId}>
-                    <td>{user.inferredId}</td>
-                    <td>{user.userName}</td>
-                    <td>{user.phone}</td>
+                    <td><span className="id-chip">{user.inferredId}</span></td>
+                    <td>
+                      <span className="cell-user">
+                        <span className="avatar avatar--sm" aria-hidden="true">
+                          {(user.userName || "?").trim().charAt(0).toUpperCase()}
+                        </span>
+                        {user.userName}
+                      </span>
+                    </td>
+                    <td dir="ltr" style={{ textAlign: "right" }}>{user.phone}</td>
                     <td>{user.email}</td>
                     <td>
                       <span className={`badge ${user.isBlocked ? "badge-danger" : "badge-success"}`}>

@@ -15,6 +15,10 @@ const pick = (obj, ...keys) => {
   return undefined;
 };
 
+// Only primitives may be rendered; anything else (an object, an array)
+// would make React throw and blank the screen.
+const txt = (v) => (v === undefined || v === null || typeof v === "object" ? undefined : String(v));
+
 function readStored() {
   try {
     return JSON.parse(sessionStorage.getItem(STORAGE_KEY) || "null");
@@ -49,17 +53,17 @@ export default function OrderConfirmation() {
     return <Navigate to="/" replace />;
   }
 
-  const order = data.order || {};
+  const order = data.order && typeof data.order === "object" ? data.order : {};
   const eventDto = pick(order, "eventDTO", "eventDto", "event") || data.event || {};
   const seatDto = pick(order, "seatDTO", "seatDto", "seat") || data.seat || {};
 
-  const orderId = pick(order, "id", "Id", "orderId", "OrderId");
-  const eventName = pick(order, "eventName", "EventName") || pick(eventDto, "name", "Name");
-  const eventDate = pick(eventDto, "date", "Date");
-  const price = pick(eventDto, "price", "Price");
-  const row = pick(seatDto, "row", "Row");
-  const line = pick(seatDto, "line", "Line");
-  const orderDate = pick(order, "orderDate", "OrderDate") || new Date().toISOString();
+  const orderId = txt(pick(order, "id", "Id", "orderId", "OrderId"));
+  const eventName = txt(pick(order, "eventName", "EventName")) || txt(pick(eventDto, "name", "Name"));
+  const eventDate = txt(pick(eventDto, "date", "Date"));
+  const price = txt(pick(eventDto, "price", "Price"));
+  const row = txt(pick(seatDto, "row", "Row"));
+  const line = txt(pick(seatDto, "line", "Line"));
+  const orderDate = txt(pick(order, "orderDate", "OrderDate")) || new Date().toISOString();
 
   return (
     <div className="page page--narrow confirm-page">

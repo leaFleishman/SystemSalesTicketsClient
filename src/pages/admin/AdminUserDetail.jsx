@@ -144,113 +144,115 @@ export default function AdminUserDetail() {
         );
     }
 
+    const initial = (user.userName || "?").trim().charAt(0).toUpperCase();
+    const canPromote = user.role !== "Manager";
+    const canDemote =
+        isOriginalAdmin && user.role === "Manager" && Number(id) !== userId;
+    const canBlock =
+        Number(id) !== userId && (user.role !== "Manager" || isOriginalAdmin);
+
     return (
-        <div className="panel">
-            <div className="panel-header">
-                <h2>משתמש #{user.id || id}</h2>
+        <div className="profile">
+            <aside className="profile-card">
+                <div className="profile-avatar">{initial}</div>
+                <h2>{user.userName}</h2>
+                <p className="profile-id">משתמש #{user.id || id}</p>
 
-                <Link
-                    className="btn btn-secondary btn-sm"
-                    to="/admin/users"
-                >
-                    חזרה לרשימה
-                </Link>
-            </div>
-
-            <div className="panel-body stack-8">
-                <div className="confirm-row">
-                    <span>שם</span>
-                    <span>{user.userName}</span>
-                </div>
-
-                <div className="confirm-row">
-                    <span>טלפון</span>
-                    <span>{user.phone}</span>
-                </div>
-
-                <div className="confirm-row">
-                    <span>אימייל</span>
-                    <span>{user.email}</span>
-                </div>
-
-                {user.role && (
-                    <div className="confirm-row">
-                        <span>תפקיד</span>
+                <div className="profile-badges">
+                    {user.role && (
                         <span className="badge badge-primary">
                             {roleLabel(user.role)}
                         </span>
-                    </div>
-                )}
-
-                <div className="confirm-row">
-                    <span>סטטוס</span>
-
+                    )}
                     <span
-                        className={`badge ${user.isBlocked
-                                ? "badge-danger"
-                                : "badge-success"
-                            }`}
+                        className={`badge ${user.isBlocked ? "badge-danger" : "badge-success"}`}
                     >
                         {user.isBlocked ? "חסום" : "פעיל"}
                     </span>
                 </div>
 
-                <div
-                    className="mt-24"
-                    style={{
-                        display: "flex",
-                        gap: 12,
-                        flexWrap: "wrap",
-                    }}
-                >
-                    {/* מוצג רק אם המשתמש עדיין אינו מנהל */}
-                    {user.role !== "Manager" && (
-                        <button
-                            className="btn btn-primary"
-                            onClick={handlePromote}
-                            disabled={promoting}
-                        >
-                            {promoting
-                                ? "מקדם..."
-                                : "קידום לתפקיד מנהל"}
-                        </button>
-                    )}
+                <Link className="btn btn-secondary btn-sm btn-block" to="/admin/users">
+                    חזרה לרשימה
+                </Link>
+            </aside>
 
-                    {/* רק מנהל מקורי יכול להחזיר מנהל למשתמש רגיל */}
-                    {isOriginalAdmin &&
-                        user.role === "Manager" &&
-                        Number(id) !== userId && (
-                            <button
-                                className="btn btn-danger"
-                                onClick={handleDemote}
-                                disabled={demoting}
-                            >
-                                {demoting
-                                    ? "מבצע..."
-                                    : "החזרה למשתמש רגיל"}
-                            </button>
-                        )}
+            <div className="profile-main">
+                <div className="panel">
+                    <div className="panel-header">
+                        <h2>פרטי המשתמש</h2>
+                    </div>
 
-                    {/* חסימה/הפעלה */}
-                    {Number(id) !== userId &&
-                        (user.role !== "Manager" ||
-                            isOriginalAdmin) && (
-                            <button
-                                className={`btn ${user.isBlocked
-                                        ? "btn-secondary"
-                                        : "btn-danger"
-                                    }`}
-                                onClick={handleToggleBlock}
-                                disabled={togglingBlock}
-                            >
-                                {togglingBlock
-                                    ? "מבצע..."
-                                    : user.isBlocked
-                                        ? "הפעלה מחדש"
-                                        : "חסימת משתמש"}
-                            </button>
+                    <div className="detail-list">
+                        <div className="detail-row">
+                            <span>שם</span>
+                            <span>{user.userName}</span>
+                        </div>
+                        <div className="detail-row">
+                            <span>טלפון</span>
+                            <span dir="ltr">{user.phone}</span>
+                        </div>
+                        <div className="detail-row">
+                            <span>אימייל</span>
+                            <span dir="ltr">{user.email}</span>
+                        </div>
+                        {user.role && (
+                            <div className="detail-row">
+                                <span>תפקיד</span>
+                                <span>{roleLabel(user.role)}</span>
+                            </div>
                         )}
+                        <div className="detail-row">
+                            <span>סטטוס</span>
+                            <span>{user.isBlocked ? "חסום" : "פעיל"}</span>
+                        </div>
+                    </div>
                 </div>
+
+                {(canPromote || canDemote || canBlock) && (
+                    <div className="panel">
+                        <div className="panel-header">
+                            <h2>פעולות</h2>
+                        </div>
+                        <div className="panel-body profile-actions">
+                            {/* מוצג רק אם המשתמש עדיין אינו מנהל */}
+                            {canPromote && (
+                                <button
+                                    className="btn btn-primary"
+                                    onClick={handlePromote}
+                                    disabled={promoting}
+                                >
+                                    {promoting ? "מקדם..." : "קידום לתפקיד מנהל"}
+                                </button>
+                            )}
+
+                            {/* רק מנהל מקורי יכול להחזיר מנהל למשתמש רגיל */}
+                            {canDemote && (
+                                <button
+                                    className="btn btn-danger"
+                                    onClick={handleDemote}
+                                    disabled={demoting}
+                                >
+                                    {demoting ? "מבצע..." : "החזרה למשתמש רגיל"}
+                                </button>
+                            )}
+
+                            {/* חסימה/הפעלה */}
+                            {canBlock && (
+                                <button
+                                    className={`btn ${user.isBlocked ? "btn-secondary" : "btn-danger"}`}
+                                    onClick={handleToggleBlock}
+                                    disabled={togglingBlock}
+                                >
+                                    {togglingBlock
+                                        ? "מבצע..."
+                                        : user.isBlocked
+                                            ? "הפעלה מחדש"
+                                            : "חסימת משתמש"}
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

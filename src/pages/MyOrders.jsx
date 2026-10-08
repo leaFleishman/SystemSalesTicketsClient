@@ -62,69 +62,72 @@ export default function MyOrders() {
         </div>
       </div>
 
-      <div className="panel">
-        <div className="panel-body">
-          {error && <div className="alert alert-danger">{error}</div>}
-          {loading ? (
-            <Spinner />
-          ) : orders.length === 0 && !error ? (
-            <EmptyState
-              title="עדיין אין לך הזמנות"
-              description="הזמנות שתבצע יופיעו כאן."
-              action={
-                <Link to="/" className="btn btn-primary">
-                  לאירועים
-                </Link>
-              }
-            />
-          ) : (
-            <div className="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>אירוע</th>
-                    <th>תאריך ושעה</th>
-                    <th>מושב</th>
-                    <th>מחיר</th>
-                    <th>סטטוס</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {orders.map((order) => (
-                    <tr key={order.orderId}>
-                      <td>{order.orderId}</td>
-                      <td>{order.eventName}</td>
-                      <td>{formatDateTime(order.eventDate)}</td>
-                      <td>
-                        שורה {order.row} · טור {order.line}
-                      </td>
-                      <td>{formatPrice(order.price)}</td>
-                      <td>
-                        <StatusBadge order={order} />
-                      </td>
-                      <td>
-                        {canCancelNow(order) ? (
-                          <button className="btn btn-danger btn-sm" onClick={() => setToCancel(order)}>
-                            ביטול הזמנה
-                          </button>
-                        ) : (
-                          !order.eventIsCancelled && (
-                            <span className="field-hint" title={`המועד האחרון לביטול: ${formatDateTime(order.cancellationDeadline)}`}>
-                              לא ניתן לבטל
-                            </span>
-                          )
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+      {error && <div className="alert alert-danger">{error}</div>}
+
+      {loading ? (
+        <Spinner />
+      ) : orders.length === 0 && !error ? (
+        <EmptyState
+          title="עדיין אין לך הזמנות"
+          description="הזמנות שתבצע יופיעו כאן."
+          action={
+            <Link to="/" className="btn btn-primary">
+              לאירועים
+            </Link>
+          }
+        />
+      ) : (
+        <div className="pass-list">
+          {orders.map((order, i) => {
+            const d = new Date(toMs(order.eventDate));
+            const valid = !Number.isNaN(d.getTime());
+            const past = valid && d.getTime() <= Date.now();
+            const state = order.eventIsCancelled ? " pass--cancelled" : past ? " pass--past" : "";
+            return (
+              <article className={`pass${state}`} key={order.orderId} style={{ "--i": i }}>
+                <div className="pass-date">
+                  <span className="pass-day">{valid ? d.getDate() : "—"}</span>
+                  <span className="pass-month">
+                    {valid ? d.toLocaleDateString("he-IL", { month: "long" }) : ""}
+                  </span>
+                </div>
+
+                <div className="pass-body">
+                  <div className="pass-top">
+                    <span className="pass-no">הזמנה #{order.orderId}</span>
+                    <StatusBadge order={order} />
+                  </div>
+                  <h3>{order.eventName}</h3>
+                  <div className="pass-meta">
+                    <span>{formatDateTime(order.eventDate)}</span>
+                    <span>
+                      שורה {order.row} · טור {order.line}
+                    </span>
+                    <span className="pass-price">{formatPrice(order.price)}</span>
+                  </div>
+                </div>
+
+                <div className="pass-action">
+                  {canCancelNow(order) ? (
+                    <button className="btn btn-danger btn-sm" onClick={() => setToCancel(order)}>
+                      ביטול הזמנה
+                    </button>
+                  ) : (
+                    !order.eventIsCancelled && (
+                      <span
+                        className="field-hint"
+                        title={`המועד האחרון לביטול: ${formatDateTime(order.cancellationDeadline)}`}
+                      >
+                        לא ניתן לבטל
+                      </span>
+                    )
+                  )}
+                </div>
+              </article>
+            );
+          })}
         </div>
-      </div>
+      )}
 
       {toCancel && (
         <CancelOrderModal order={toCancel} onClose={() => setToCancel(null)} onCancelled={handleCancelled} />

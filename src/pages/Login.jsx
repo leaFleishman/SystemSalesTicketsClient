@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { extractErrorMessage } from "../api/client";
+import AuthShell from "../components/AuthShell";
 
 export default function Login() {
   const { login, isAuthenticated } = useAuth();
@@ -44,50 +45,45 @@ export default function Login() {
   };
 
   return (
-    <div className="auth-wrap">
-      <div style={{ width: "100%", maxWidth: 400 }}>
-        <div className="auth-header">
-          <h1>ברוכים השבים</h1>
-          <p>התחברו כדי לצפות באירועים ולהזמין כרטיסים</p>
-        </div>
-
-        <div className="form-card">
-          {notice && <div className="alert alert-info">{notice}</div>}
-          {error && <div className="alert alert-danger">{error}</div>}
-
-          <form onSubmit={handleSubmit}>
-            <div className="field">
-              <label htmlFor="email">אימייל</label>
-              <input
-                id="email"
-                type="email"
-                autoComplete="username"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-            <div className="field">
-              <label htmlFor="password">סיסמה</label>
-              <input
-                id="password"
-                type="password"
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
-            <button type="submit" className="btn btn-primary btn-block" disabled={loading}>
-              {loading ? "מתחבר..." : "התחברות"}
-            </button>
-          </form>
-        </div>
-
-        <p className="auth-switch">
+    <AuthShell
+      title="ברוכים השבים"
+      subtitle="התחברו כדי לצפות באירועים ולהזמין כרטיסים"
+      footer={
+        <>
           אין לכם חשבון? <Link to="/register">הרשמה</Link>
-        </p>
-      </div>
-    </div>
+        </>
+      }
+    >
+      {notice && <div className="alert alert-info">{notice}</div>}
+      {error && <div className="alert alert-danger">{error}</div>}
+
+      <form onSubmit={handleSubmit}>
+        <div className="field">
+          <label htmlFor="email">אימייל</label>
+          <input
+            id="email"
+            type="email"
+            autoComplete="username"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+        </div>
+        <div className="field">
+          <label htmlFor="password">סיסמה</label>
+          <input
+            id="password"
+            type="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+        </div>
+        <button type="submit" className="btn btn-primary btn-block" disabled={loading}>
+          {loading ? "מתחבר..." : "התחברות"}
+        </button>
+      </form>
+    </AuthShell>
   );
 }

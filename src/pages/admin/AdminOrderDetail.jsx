@@ -36,37 +36,37 @@ export default function AdminOrderDetail() {
           חזרה לרשימה
         </Link>
       </div>
-      <div className="panel-body stack-8">
-        <div className="confirm-row">
+      <div className="detail-list">
+        <div className="detail-row">
           <span>אירוע</span>
           <span>{order.eventName || order.eventDTO?.name}</span>
         </div>
         {order.eventDTO?.date && (
-          <div className="confirm-row">
+          <div className="detail-row">
             <span>תאריך אירוע</span>
             <span>{formatDate(order.eventDTO.date)}</span>
           </div>
         )}
         {order.eventDTO?.price != null && (
-          <div className="confirm-row">
+          <div className="detail-row">
             <span>מחיר</span>
             <span>{formatPrice(order.eventDTO.price)}</span>
           </div>
         )}
         {order.seatDTO && (
-          <div className="confirm-row">
+          <div className="detail-row">
             <span>מושב</span>
             <span>
               שורה {order.seatDTO.row} · טור {order.seatDTO.line}
             </span>
           </div>
         )}
-        <div className="confirm-row">
+        <div className="detail-row">
           <span>מועד ההזמנה</span>
           <span>{formatDateTime(order.orderDate)}</span>
         </div>
         {order.message && (
-          <div className="confirm-row">
+          <div className="detail-row">
             <span>הודעה</span>
             <span>{order.message}</span>
           </div>

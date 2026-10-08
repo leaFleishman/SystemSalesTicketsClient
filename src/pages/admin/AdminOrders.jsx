@@ -48,7 +48,7 @@ export default function AdminOrders() {
               <tbody>
                 {page.data.map((order) => (
                   <tr key={order.id}>
-                    <td>{order.id}</td>
+                    <td><span className="id-chip">{order.id}</span></td>
                     <td>{order.eventId}</td>
                     <td>{order.seatId}</td>
                     <td>{order.userId}</td>

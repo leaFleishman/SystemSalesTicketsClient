@@ -1,4 +1,5 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
+import ErrorBoundary from "./components/ErrorBoundary";
 import Navbar from "./components/Navbar";
 import SessionExpiryModal from "./components/SessionExpiryModal";
 import { ProtectedRoute, RoleRoute } from "./components/RouteGuards";
@@ -23,11 +24,13 @@ import AdminUsers from "./pages/admin/AdminUsers";
 import AdminUserDetail from "./pages/admin/AdminUserDetail";
 
 export default function App() {
+  const location = useLocation();
   return (
     <div className="app-shell">
       <Navbar />
       <SessionExpiryModal />
 
+      <ErrorBoundary key={location.pathname}>
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
@@ -56,6 +59,7 @@ export default function App() {
 
         <Route path="*" element={<NotFound />} />
       </Routes>
+      </ErrorBoundary>
     </div>
   );
 }
