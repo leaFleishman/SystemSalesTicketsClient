@@ -1,87 +1,121 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { Link, Navigate, useLocation } from "react-router-dom";
 import { formatDate, formatDateTime, formatPrice } from "../utils/format";
 
-const COLORS = ["#ffc857", "#ff9f43", "#ff5d8f", "#8b6cff", "#4cd7ff", "#ffffff"];
+const STORAGE_KEY = "sst_last_confirmation";
 
-// A short burst of confetti, once, when the booking is confirmed.
-function Confetti() {
-  const pieces = useMemo(
-    () =>
-      Array.from({ length: 46 }, () => ({
-        "--x": `${Math.random() * 100}%`,
-        "--w": `${7 + Math.random() * 8}px`,
-        "--c": COLORS[Math.floor(Math.random() * COLORS.length)],
-        "--d": `${0.25 + Math.random() * 0.9}s`,
-        "--t": `${2.2 + Math.random() * 1.6}s`,
-        "--s": `${(Math.random() - 0.5) * 260}px`,
-        "--r": `${(Math.random() - 0.5) * 1080}deg`,
-      })),
-    []
-  );
+// The API may answer with different casings / shapes, and may even return an
+// empty body, so every field is read defensively and falls back to the event
+// and seat that the booking page passed along.
+const pick = (obj, ...keys) => {
+  if (!obj || typeof obj !== "object") return undefined;
+  for (const k of keys) {
+    if (obj[k] !== undefined && obj[k] !== null) return obj[k];
+  }
+  return undefined;
+};
 
-  return (
-    <div className="confetti" aria-hidden="true">
-      {pieces.map((style, i) => (
-        <i key={i} style={style} />
-      ))}
-    </div>
-  );
+// Only primitives may be rendered; anything else (an object, an array)
+// would make React throw and blank the screen.
+const txt = (v) => (v === undefined || v === null || typeof v === "object" ? undefined : String(v));
+
+function readStored() {
+  try {
+    return JSON.parse(sessionStorage.getItem(STORAGE_KEY) || "null");
+  } catch {
+    return null;
+  }
 }
 
 export default function OrderConfirmation() {
   const location = useLocation();
-  const order = location.state?.order;
 
-  if (!order) {
+  const data = useMemo(() => {
+    const st = location.state;
+    if (st && (st.order || st.event || st.seat)) {
+      return { order: st.order || {}, event: st.event, seat: st.seat };
+    }
+    return readStored();
+  }, [location.state]);
+
+  // keep it so a refresh of this page still shows the confirmation
+  useEffect(() => {
+    if (location.state && data) {
+      try {
+        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      } catch {
+        /* storage unavailable: fine */
+      }
+    }
+  }, [location.state, data]);
+
+  if (!data) {
     return <Navigate to="/" replace />;
   }
 
-  const eventDto = order.eventDTO;
-  const seatDto = order.seatDTO;
+  const order = data.order && typeof data.order === "object" ? data.order : {};
+  const eventDto = pick(order, "eventDTO", "eventDto", "event") || data.event || {};
+  const seatDto = pick(order, "seatDTO", "seatDto", "seat") || data.seat || {};
+
+  const orderId = txt(pick(order, "id", "Id", "orderId", "OrderId"));
+  const eventName = txt(pick(order, "eventName", "EventName")) || txt(pick(eventDto, "name", "Name"));
+  const eventDate = txt(pick(eventDto, "date", "Date"));
+  const price = txt(pick(eventDto, "price", "Price"));
+  const row = txt(pick(seatDto, "row", "Row"));
+  const line = txt(pick(seatDto, "line", "Line"));
+  const orderDate = txt(pick(order, "orderDate", "OrderDate")) || new Date().toISOString();
 
   return (
-    <div className="page page--narrow">
-      <Confetti />
+    <div className="page page--narrow confirm-page">
       <div className="confirm-ticket">
         <div className="confirm-ticket-top">
-          <div className="checkmark">✓</div>
-          <h1 style={{ fontSize: "1.9rem", fontWeight: 900 }}>ההזמנה אושרה</h1>
-          <p style={{ opacity: 0.85, marginTop: 6, fontSize: "0.9rem" }}>מספר הזמנה #{order.id}</p>
-        </div>
-        <div className="confirm-ticket-body">
-          <div className="confirm-row">
-            <span>אירוע</span>
-            <span>{order.eventName || eventDto?.name}</span>
+          <div className="checkmark">
+            <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+              <path className="check-path" d="M5 12.5l4.5 4.5L19 7.5" />
+            </svg>
           </div>
-          {eventDto?.date && (
+          <h1>ההזמנה אושרה</h1>
+          {orderId !== undefined && <p>מספר הזמנה #{orderId}</p>}
+        </div>
+
+        <div className="confirm-ticket-body">
+          {eventName && (
             <div className="confirm-row">
-              <span>תאריך</span>
-              <span>{formatDate(eventDto.date)}</span>
+              <span>אירוע</span>
+              <span>{eventName}</span>
             </div>
           )}
-          {seatDto && (
+          {eventDate && (
+            <div className="confirm-row">
+              <span>תאריך</span>
+              <span>{formatDate(eventDate)}</span>
+            </div>
+          )}
+          {(row !== undefined || line !== undefined) && (
             <div className="confirm-row">
               <span>מושב</span>
               <span>
-                שורה {seatDto.row} · טור {seatDto.line}
+                שורה {row ?? "—"} · מושב {line ?? "—"}
               </span>
             </div>
           )}
-          {eventDto?.price != null && (
+          {price !== undefined && (
             <div className="confirm-row">
               <span>מחיר</span>
-              <span>{formatPrice(eventDto.price)}</span>
+              <span>{formatPrice(price)}</span>
             </div>
           )}
           <div className="confirm-row">
             <span>מועד ההזמנה</span>
-            <span>{formatDateTime(order.orderDate)}</span>
+            <span>{formatDateTime(orderDate)}</span>
           </div>
         </div>
       </div>
 
-      <div className="text-center mt-24">
+      <div className="text-center mt-24 confirm-actions">
+        <Link to="/my-orders" className="btn btn-primary">
+          ההזמנות שלי
+        </Link>
         <Link to="/" className="btn btn-secondary">
           חזרה לאירועים
         </Link>

@@ -1,11 +1,19 @@
+import { useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { roleLabel } from "../utils/format";
-import ThemeToggle from "./ThemeToggle";
 
 export default function Navbar() {
   const { isAuthenticated, isManager, session, logout } = useAuth();
   const navigate = useNavigate();
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -13,7 +21,7 @@ export default function Navbar() {
   };
 
   return (
-    <header className="navbar">
+    <header className={`navbar${scrolled ? " is-scrolled" : ""}`}>
       <div className="navbar-inner">
         <NavLink to="/" className="brand">
           <span className="brand-mark" aria-hidden="true" />
@@ -45,7 +53,6 @@ export default function Navbar() {
                 <span className="nav-user-role">{roleLabel(session.role)}</span>
               </div>
             </div>
-            <ThemeToggle />
             <button className="btn btn-ghost btn-sm" onClick={handleLogout}>
               התנתקות
             </button>
@@ -58,7 +65,6 @@ export default function Navbar() {
             <NavLink to="/register" className="btn btn-primary btn-sm">
               הרשמה
             </NavLink>
-            <ThemeToggle />
           </div>
         )}
       </div>
