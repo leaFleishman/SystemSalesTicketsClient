@@ -212,7 +212,7 @@ export default function AdminDashboard() {
 
                       <td>
                         <div className="fill-bar" title={`${pct}%`}>
-                          <i style={{ width: `${pct}%` }} />
+                          <i style={{ width: `${Number(event.ticketsSold) > 0 ? Math.max(pct, 4) : 0}%` }} />
                           <span>{pct}%</span>
                         </div>
                       </td>
