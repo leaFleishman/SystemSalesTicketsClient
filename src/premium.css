@@ -1599,7 +1599,3 @@ td .btn { white-space: nowrap; }
   color: #7b755f;
 }
 .confirm-ticket-body .ticket-note { padding: 16px 0 0; }
-.ticket-note--plain {
-  padding: 14px 0 0;
-  color: var(--ink-soft);
-}
