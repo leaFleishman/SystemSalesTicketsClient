@@ -1599,3 +1599,14 @@ td .btn { white-space: nowrap; }
   color: #7b755f;
 }
 .confirm-ticket-body .ticket-note { padding: 16px 0 0; }
+
+/* Fallback: show the policy note on the auth demo card even if the JSX note is missing */
+.auth-aside-ticket:not(:has(.ticket-note))::after {
+  content: "הכרטיס הינו אישי ואינו ניתן להעברה.";
+  display: block;
+  padding: 0 22px 16px;
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #7b755f;
+}
