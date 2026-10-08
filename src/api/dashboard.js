@@ -1,4 +1,5 @@
 import { apiClient } from "./client";
+import { getSeatsForEvent } from "./eventSeats";
 
 export async function getDashboard() {
   // The timestamp param + no-cache header make sure the browser / any proxy
@@ -7,7 +8,37 @@ export async function getDashboard() {
     params: { _: Date.now() },
     headers: { "Cache-Control": "no-cache" },
   });
-  return response.data;
+  return withRealSeatCounts(response.data);
+}
+
+// The server computes "available" as event.numberOfSeats - sold (e.g. 1000),
+// but the booking screen counts the seats really linked to the event (e.g.
+// 170). Use the same source as the booking screen so both always agree.
+async function withRealSeatCounts(data) {
+  const events = data?.upcomingEvents;
+  if (!Array.isArray(events) || events.length === 0) return data;
+
+  let delta = 0;
+  const fixed = await Promise.all(
+    events.map(async (ev) => {
+      try {
+        const seats = await getSeatsForEvent(ev.id);
+        if (!Array.isArray(seats)) return ev;
+        const available = seats.filter((s) => (s.isAvailable ?? s.IsAvailable) === true).length;
+        const sold = seats.length - available;
+        delta += available - Number(ev.availableSeats || 0);
+        return { ...ev, availableSeats: available, ticketsSold: sold };
+      } catch {
+        return ev; // keep server numbers if the seat call fails
+      }
+    })
+  );
+
+  return {
+    ...data,
+    upcomingEvents: fixed,
+    availableSeats: Number(data.availableSeats || 0) + delta,
+  };
 }
 
 // Tells every open dashboard (this tab and other tabs) that numbers changed
