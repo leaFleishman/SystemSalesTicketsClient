@@ -1573,3 +1573,18 @@ td .btn { white-space: nowrap; }
 @media (prefers-reduced-motion: reduce) {
   .auth-split, .admin-shell, .auth-points li, .auth-aside-ticket, .pass, .fill-bar i, .err-code, .profile-avatar { animation: none !important; }
 }
+
+/* ---------- Auth aside: centred composition ---------- */
+.auth-aside {
+  align-items: center;
+  justify-content: center;
+  gap: 44px;
+  text-align: center;
+}
+.auth-aside-brand { align-self: center; }
+.auth-aside-body { display: flex; flex-direction: column; align-items: center; max-width: 460px; }
+.auth-points { align-items: flex-start; margin-inline: auto; text-align: start; }
+.auth-aside-ticket { margin-inline: auto; }
+.auth-panel .auth-header { text-align: center; }
+.auth-panel .auth-header::before { margin: 0 auto 18px; }
+.auth-panel .auth-switch { text-align: center; }
