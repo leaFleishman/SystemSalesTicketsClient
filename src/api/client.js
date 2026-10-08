@@ -42,14 +42,19 @@ apiClient.interceptors.response.use(
 export function extractErrorMessage(error, fallback = "משהו השתבש, נסו שוב.") {
   const data = error?.response?.data;
 
-  if (!data) return error?.message || fallback;
+  if (!data) return error?.message ? String(error.message) : fallback;
   if (typeof data === "string") return data;
-  if (data.message) return data.message;
-  if (data.title && data.errors) {
-    const firstField = Object.values(data.errors)?.[0];
-    if (Array.isArray(firstField) && firstField[0]) return firstField[0];
-    return data.title;
+  if (typeof data !== "object") return String(data);
+  if (typeof data.message === "string" && data.message) return data.message;
+
+  // ASP.NET validation problem details: { title, status, errors: { Field: [msg] } }
+  if (data.errors && typeof data.errors === "object") {
+    const msgs = Object.entries(data.errors).flatMap(([field, v]) =>
+      (Array.isArray(v) ? v : [v]).map((m) => (field && !/^\$|^$/.test(field) ? `${field}: ${m}` : String(m)))
+    );
+    if (msgs.length) return msgs.join(" · ");
   }
-  if (data.title) return data.title;
+  if (typeof data.title === "string" && data.title) return data.title;
+  if (typeof data.detail === "string" && data.detail) return data.detail;
   return fallback;
 }

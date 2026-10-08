@@ -7,6 +7,7 @@ import { createOrder } from "../api/orders";
 
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
+import { extractErrorMessage } from "../api/client";
 
 import "../theme.css";
 
@@ -56,7 +57,7 @@ const { name } = useParams();
   // NOTE: AuthContext exposes `isAuthenticated` / `session`, not `user`.
   // Reading a non-existent `user` made every booking attempt bounce to /login
   // (and from there straight back to the events list).
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, userId } = useAuth();
   const toast = useToast();
 
   const [event, setEvent] = useState(null);
@@ -145,9 +146,10 @@ const { name } = useParams();
       setSeats([]);
 
       setError(
-        err.response?.data ||
-          err.message ||
+        extractErrorMessage(
+          err,
           "לא ניתן לטעון את פרטי האירוע"
+        )
       );
     } finally {
       setLoading(false);
@@ -219,6 +221,7 @@ const { name } = useParams();
         await createOrder({
           eventId,
           seatId,
+          userId: userId ?? undefined,
         });
 
       navigate(
@@ -251,10 +254,12 @@ const { name } = useParams();
         await load();
         setSelectedSeat(null);
       } else {
+        // always a string: a raw ProblemDetails object would crash React
         setBookingError(
-          err.response?.data?.message ||
-            err.response?.data ||
+          extractErrorMessage(
+            err,
             "אירעה שגיאה בעת הזמנת המושב"
+          )
         );
       }
     } finally {
@@ -671,7 +676,7 @@ const { name } = useParams();
 
           {bookingError && (
             <div className="booking-error">
-              {bookingError}
+              {String(bookingError)}
             </div>
           )}
 

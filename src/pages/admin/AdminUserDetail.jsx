@@ -145,11 +145,21 @@ export default function AdminUserDetail() {
     }
 
     const initial = (user.userName || "?").trim().charAt(0).toUpperCase();
-    const canPromote = user.role !== "Manager";
-    const canDemote =
-        isOriginalAdmin && user.role === "Manager" && Number(id) !== userId;
+    // The API may or may not include the role on this DTO. When it is known we
+    // show only the matching action; when it is unknown we offer both and let
+    // the server accept or refuse.
+    const roleKnown = typeof user.role === "string" && user.role !== "";
+    const isManager = user.role === "Manager";
+    const isProtectedAdmin =
+        (user.email || "").trim().toLowerCase() === ORIGINAL_ADMIN_EMAIL;
+    const isSelf = Number(id) === userId;
+
+    const canPromote = !roleKnown || !isManager;
+    // A promoted user can always be reverted, except the original admin
+    // account itself and the signed-in user.
+    const canDemote = (!roleKnown || isManager) && !isProtectedAdmin && !isSelf;
     const canBlock =
-        Number(id) !== userId && (user.role !== "Manager" || isOriginalAdmin);
+        !isSelf && !isProtectedAdmin && (!isManager || isOriginalAdmin);
 
     return (
         <div className="profile">
