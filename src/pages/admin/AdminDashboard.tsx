@@ -84,10 +84,10 @@ export default function AdminDashboard() {
   useEffect(() => {
     loadDashboard();
 
-    // Poll every 15s while the tab is visible.
+    // Poll every 5s while the tab is visible.
     const timer = setInterval(() => {
       if (document.visibilityState === "visible") loadDashboard(true);
-    }, 15000);
+    }, 5000);
 
     // Refresh right away when the manager returns to the tab.
     const onVisible = () => {
@@ -96,7 +96,11 @@ export default function AdminDashboard() {
     document.addEventListener("visibilitychange", onVisible);
     window.addEventListener("focus", onVisible);
 
+    // Refresh as soon as a booking/cancellation happens (any tab).
+    const unsubscribe = dashboardApi.subscribeDashboardChanges(() => loadDashboard(true));
+
     return () => {
+      unsubscribe();
       clearInterval(timer);
       document.removeEventListener("visibilitychange", onVisible);
       window.removeEventListener("focus", onVisible);

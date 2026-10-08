@@ -1,7 +1,11 @@
 import { apiClient } from "./client";
+import { notifyDashboardChanged } from "./dashboard";
 
 export function createOrder({ eventId, seatId, userId }) {
-  return apiClient.post("/Order", { eventId, seatId, userId }).then((res) => res.data);
+  return apiClient.post("/Order", { eventId, seatId, userId }).then((res) => {
+    notifyDashboardChanged();
+    return res.data;
+  });
 }
 
 export function getAllOrders(pageNumber = 1, pageSize = 20) {
@@ -20,5 +24,8 @@ export function getMyOrders() {
 // Cancels one of the customer's bookings. The server only allows this
 // more than 24 hours before the event (409 otherwise).
 export function cancelOrder(id) {
-  return apiClient.delete(`/Order/${id}`).then((res) => res.data);
+  return apiClient.delete(`/Order/${id}`).then((res) => {
+    notifyDashboardChanged();
+    return res.data;
+  });
 }
