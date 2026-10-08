@@ -57,27 +57,50 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  async function loadDashboard() {
-    setLoading(true);
-    setError("");
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+
+  // silent = background refresh: no spinner (which would unmount the table
+  // and kill the bar animation) and no error screen if it fails - the last
+  // good data stays on screen.
+  async function loadDashboard(silent = false) {
+    if (!silent) {
+      setLoading(true);
+      setError("");
+    }
 
     try {
       const result = await dashboardApi.getDashboard();
       setData(result);
+      setLastUpdated(new Date());
     } catch (err) {
-      setError(
-        extractErrorMessage(
-          err,
-          "טעינת לוח הבקרה נכשלה."
-        )
-      );
+      if (!silent) {
+        setError(extractErrorMessage(err, "טעינת לוח הבקרה נכשלה."));
+      }
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }
 
   useEffect(() => {
     loadDashboard();
+
+    // Poll every 15s while the tab is visible.
+    const timer = setInterval(() => {
+      if (document.visibilityState === "visible") loadDashboard(true);
+    }, 15000);
+
+    // Refresh right away when the manager returns to the tab.
+    const onVisible = () => {
+      if (document.visibilityState === "visible") loadDashboard(true);
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
+
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
+    };
   }, []);
 
   if (loading) {
@@ -96,7 +119,7 @@ export default function AdminDashboard() {
         <button
           type="button"
           className="btn btn-secondary btn-sm"
-          onClick={loadDashboard}
+          onClick={() => loadDashboard()}
         >
           נסה שוב
         </button>
@@ -147,13 +170,14 @@ export default function AdminDashboard() {
 
             <div className="field-hint">
               5 האירועים הקרובים ביותר
+              {lastUpdated && ` · עודכן ב-${lastUpdated.toLocaleTimeString("he-IL")}`}
             </div>
           </div>
 
           <button
             type="button"
             className="btn btn-secondary btn-sm"
-            onClick={loadDashboard}
+            onClick={() => loadDashboard()}
           >
             רענון
           </button>
