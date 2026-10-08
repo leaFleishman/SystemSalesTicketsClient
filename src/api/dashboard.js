@@ -11,9 +11,11 @@ export async function getDashboard() {
   return withRealSeatCounts(response.data);
 }
 
-// The server computes "available" as event.numberOfSeats - sold (e.g. 1000),
-// but the booking screen counts the seats really linked to the event (e.g.
-// 170). Use the same source as the booking screen so both always agree.
+// The server computes "available" as event.numberOfSeats - sold, i.e. the
+// quantity of seats actually ordered for the event. "Sold" is taken from the
+// seats really linked to the event (same source as the booking screen), while
+// the total stays the ordered quantity - NOT the number of linked seats
+// (e.g. 170). So percentages = booked seats / ordered quantity.
 async function withRealSeatCounts(data) {
   const events = data?.upcomingEvents;
   if (!Array.isArray(events) || events.length === 0) return data;
@@ -24,8 +26,13 @@ async function withRealSeatCounts(data) {
       try {
         const seats = await getSeatsForEvent(ev.id);
         if (!Array.isArray(seats)) return ev;
-        const available = seats.filter((s) => (s.isAvailable ?? s.IsAvailable) === true).length;
-        const sold = seats.length - available;
+        const sold = seats.filter((s) => (s.isAvailable ?? s.IsAvailable) !== true).length;
+        // ordered quantity: event.numberOfSeats if the API sends it, otherwise
+        // the server's own sold + available (= numberOfSeats).
+        const ordered = Number(ev.numberOfSeats ?? ev.NumberOfSeats);
+        const serverTotal = Number(ev.ticketsSold || 0) + Number(ev.availableSeats || 0);
+        const total = ordered > 0 ? ordered : serverTotal > 0 ? serverTotal : seats.length;
+        const available = Math.max(total - sold, 0);
         delta += available - Number(ev.availableSeats || 0);
         return { ...ev, availableSeats: available, ticketsSold: sold };
       } catch {
