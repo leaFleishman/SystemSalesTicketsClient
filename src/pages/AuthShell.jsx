@@ -38,7 +38,12 @@ export default function AuthShell({ title, subtitle, children, footer }) {
             <strong>שורה C · מושב 12</strong>
           </div>
           <div className="aat-bar" />
-          <div className="ticket-note">הכרטיס הינו אישי ואינו ניתן להעברה.</div>
+          <div
+            className="ticket-note"
+            style={{ padding: "0 22px 16px", textAlign: "center", fontSize: "0.8rem", fontWeight: 700, color: "#7b755f" }}
+          >
+            הכרטיס הינו אישי ואינו ניתן להעברה.
+          </div>
         </div>
       </aside>
 
