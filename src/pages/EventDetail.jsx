@@ -296,17 +296,34 @@ const { name } = useParams();
     );
   }
 
-  const totalSeats = seats.length;
+  // Total = the quantity of seats actually ordered/paid for this event
+  // (event.numberOfSeats), not the number of seats linked to it — for some
+  // events fewer seats are paid for than are physically linked.
+  // Falls back to the linked-seats count if the field is missing.
+  const orderedSeats = Number(
+    event.numberOfSeats ?? event.NumberOfSeats
+  );
 
-  const availableTickets =
-    seats.filter(isAvailable).length;
+  const totalSeats =
+    Number.isFinite(orderedSeats) && orderedSeats > 0
+      ? orderedSeats
+      : seats.length;
 
-  const soldTickets =
-    totalSeats - availableTickets;
+  const soldTickets = seats.filter(
+    (seat) => !isAvailable(seat)
+  ).length;
+
+  const availableTickets = Math.max(
+    totalSeats - soldTickets,
+    0
+  );
 
   const soldPercent =
     totalSeats > 0
-      ? Math.round((soldTickets / totalSeats) * 100)
+      ? Math.min(
+          Math.round((soldTickets / totalSeats) * 100),
+          100
+        )
       : 0;
 
   const DONUT_R = 38;
